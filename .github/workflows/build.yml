@@ -1,0 +1,45 @@
+name: build-windows
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+
+      - name: Build OwnTest.exe (PyInstaller)
+        run: pyinstaller build/owntest.spec --distpath dist --workpath .pybuild
+
+      - name: Download WebView2 bootstrapper
+        run: curl -L -o build/MicrosoftEdgeWebview2Setup.exe https://go.microsoft.com/fwlink/p/?LinkId=2124703
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Build installer (Inno Setup)
+        run: '& "C:\Program Files (x86)\Inno Setup 6\iscc.exe" build\installer.iss'
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: OwnTest-Setup
+          path: dist/OwnTest-Setup.exe
+
+      - name: Upload portable exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: OwnTest-portable
+          path: dist/OwnTest.exe
