@@ -1,4 +1,6 @@
-# OwnTest — Your Own AI-Driven Test Automation Engine
+# Intent Automation — Your Own AI-Driven Test Automation Engine
+
+(Engine package name: `owntest` — code imports and env vars keep that name.)
 
 A test automation engine built from scratch:
 - **UI engine**: raw Chrome DevTools Protocol (CDP) over WebSocket. No Playwright. No Selenium.
@@ -86,23 +88,23 @@ inventing endpoints/selectors, and output is schema-validated before execution.
 - These gaps are exactly what Playwright spent years hardening — budget for them.
 
 ## Shipping to end users (zero-setup install)
-End users receive ONE file: **OwnTest-Setup.exe**. They double-click it, click
+End users receive ONE file: **IntentAutomation-Setup.exe**. They double-click it, click
 Next, and get a desktop icon. No Python, no pip, no terminal, no WebView2 worries
 (the installer adds it silently if missing). App data (intent files, reports)
 lives in %APPDATA%\OwnTest so it works even when installed to Program Files.
 
-Two ways to produce OwnTest-Setup.exe (you do this once per release):
+Two ways to produce IntentAutomation-Setup.exe (you do this once per release):
 1. **Automatic (recommended)** — push this repo to GitHub. The included workflow
-   (.github/workflows/build.yml) builds OwnTest.exe with PyInstaller and wraps it
+   (.github/workflows/build.yml) builds IntentAutomation.exe with PyInstaller and wraps it
    with Inno Setup on a Windows runner. Download the artifact from the Actions tab.
 2. **Local Windows machine** —
    pip install -r requirements.txt pyinstaller
    pyinstaller build/owntest.spec
    (optional installer) install Inno Setup, drop MicrosoftEdgeWebview2Setup.exe
-   into build/, then: iscc build\installer.iss → dist/OwnTest-Setup.exe
-   dist/OwnTest.exe alone is also fully portable — double-click and it runs.
+   into build/, then: iscc build\installer.iss → dist/IntentAutomation-Setup.exe
+   dist/IntentAutomation.exe alone is also fully portable — double-click and it runs.
 
-## OwnTest Studio (the app)
+## Intent Automation Studio (the app)
 One codebase, two doors:
 - **Native Windows app**: `run_desktop.bat` (or `python app/desktop.py`) — opens the UI
   in a native WebView2 window via pywebview. No browser chrome, real desktop app feel.

@@ -4,7 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-OwnTest is a test automation engine built from scratch, deliberately avoiding existing
+Intent Automation (branding; the Python package and env vars keep the original name
+`owntest`/`OWNTEST_*`) is a test automation engine built from scratch, deliberately avoiding existing
 frameworks: raw Chrome DevTools Protocol instead of Playwright/Selenium, a stdlib HTTP
 client instead of requests/Postman, and a provider-agnostic LLM layer instead of binding
 to one vendor SDK. The point of the project is to own every layer, not to wrap an
@@ -55,10 +56,10 @@ LLM generation needs `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` in the environment.
 pip install -r requirements.txt pyinstaller
 pyinstaller build/owntest.spec
 # optional: install Inno Setup, drop MicrosoftEdgeWebview2Setup.exe into build/, then
-iscc build\installer.iss    # -> dist/OwnTest-Setup.exe
+iscc build\installer.iss    # -> dist/IntentAutomation-Setup.exe
 ```
 `.github/workflows/build.yml` does this automatically on push (Windows runner, PyInstaller
-+ Inno Setup) — download `OwnTest-Setup` / `OwnTest-portable` artifacts from Actions.
++ Inno Setup) — download `IntentAutomation-Setup` / `IntentAutomation-portable` artifacts from Actions.
 
 ## Architecture
 

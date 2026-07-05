@@ -1,21 +1,21 @@
-; Inno Setup script for OwnTest Studio.
-; Produces the single file end users receive: OwnTest-Setup.exe
+; Inno Setup script for Intent Automation Studio.
+; Produces the single file end users receive: IntentAutomation-Setup.exe
 ; Build (after PyInstaller): iscc build\installer.iss
 ; Download Inno Setup: https://jrsoftware.org/isdl.php
 
-#define AppName "OwnTest Studio"
+#define AppName "Intent Automation Studio"
 #define AppVersion "0.1.0"
-#define AppExe "OwnTest.exe"
+#define AppExe "IntentAutomation.exe"
 
 [Setup]
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher=Your Company
-DefaultDirName={autopf}\OwnTest
+DefaultDirName={autopf}\Intent Automation
 DefaultGroupName={#AppName}
 UninstallDisplayIcon={app}\{#AppExe}
 OutputDir=..\dist
-OutputBaseFilename=OwnTest-Setup
+OutputBaseFilename=IntentAutomation-Setup
 Compression=lzma2
 SolidCompression=yes
 PrivilegesRequiredOverridesAllowed=dialog

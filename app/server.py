@@ -155,5 +155,5 @@ def run_server(host="127.0.0.1", port=None, debug=False):
 
 if __name__ == "__main__":
     p = pick_port()
-    print(f"OwnTest Studio → http://127.0.0.1:{p}")
+    print(f"Intent Automation Studio → http://127.0.0.1:{p}")
     run_server(port=p)

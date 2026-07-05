@@ -1,7 +1,7 @@
-# PyInstaller spec for OwnTest Studio.
+# PyInstaller spec for Intent Automation Studio.
 # Build on a Windows machine (or GitHub Actions windows runner):
 #   pyinstaller build/owntest.spec
-# Output: dist/OwnTest.exe  — fully self-contained, no Python needed by users.
+# Output: dist/IntentAutomation.exe — fully self-contained, no Python needed by users.
 import os
 
 block_cipher = None
@@ -38,7 +38,7 @@ exe = EXE(
     a.binaries,
     a.zipfiles,
     a.datas,
-    name='OwnTest',
+    name='IntentAutomation',
     debug=False,
     strip=False,
     upx=False,

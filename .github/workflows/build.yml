@@ -20,7 +20,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt pyinstaller
 
-      - name: Build OwnTest.exe (PyInstaller)
+      - name: Build IntentAutomation.exe (PyInstaller)
         run: pyinstaller build/owntest.spec --distpath dist --workpath .pybuild
 
       - name: Download WebView2 bootstrapper
@@ -35,11 +35,11 @@ jobs:
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          name: OwnTest-Setup
-          path: dist/OwnTest-Setup.exe
+          name: IntentAutomation-Setup
+          path: dist/IntentAutomation-Setup.exe
 
       - name: Upload portable exe
         uses: actions/upload-artifact@v4
         with:
-          name: OwnTest-portable
-          path: dist/OwnTest.exe
+          name: IntentAutomation-portable
+          path: dist/IntentAutomation.exe

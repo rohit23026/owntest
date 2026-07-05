@@ -1,5 +1,5 @@
 @echo off
-REM OwnTest Studio - browser mode
+REM Intent Automation Studio - browser mode
 cd /d "%~dp0"
 
 where python >nul 2>nul

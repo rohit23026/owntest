@@ -157,7 +157,7 @@ async def run_suite(intent: dict, api_base_url: str = "",
 
 def main():
     import argparse
-    p = argparse.ArgumentParser(description="OwnTest runner")
+    p = argparse.ArgumentParser(description="Intent Automation runner")
     p.add_argument("intent_file", help="path to test-intent JSON")
     p.add_argument("--api-base-url", default="")
     p.add_argument("--headed", action="store_true")
