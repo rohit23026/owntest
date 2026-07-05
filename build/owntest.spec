@@ -1,4 +1,4 @@
-# PyInstaller spec for Intent Automation Studio.
+# PyInstaller spec for Intent Automation.
 # Build on a Windows machine (or GitHub Actions windows runner):
 #   pyinstaller build/owntest.spec
 # Output: dist/IntentAutomation.exe — fully self-contained, no Python needed by users.

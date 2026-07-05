@@ -1,5 +1,5 @@
 """
-Intent Automation Studio — the app end users double-click.
+Intent Automation — the app end users double-click.
 Starts the embedded server on a free port, opens a native window (WebView2).
 Falls back to the default browser if the native window can't start.
 No setup, no terminal, no Python knowledge required from the user.
@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
     try:
         import webview
-        webview.create_window("Intent Automation Studio", URL,
+        webview.create_window("Intent Automation", URL,
                               width=1280, height=840, min_size=(980, 640))
         webview.start()
     except Exception:

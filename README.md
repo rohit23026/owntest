@@ -104,14 +104,14 @@ Two ways to produce IntentAutomation-Setup.exe (you do this once per release):
    into build/, then: iscc build\installer.iss → dist/IntentAutomation-Setup.exe
    dist/IntentAutomation.exe alone is also fully portable — double-click and it runs.
 
-## Intent Automation Studio (the app)
+## Intent Automation (the app)
 One codebase, two doors:
 - **Native Windows app**: `run_desktop.bat` (or `python app/desktop.py`) — opens the UI
   in a native WebView2 window via pywebview. No browser chrome, real desktop app feel.
 - **Browser**: `run_browser.bat` (or `python app/server.py`) then open http://127.0.0.1:8700
   — same UI, usable from any browser (and later, by teammates on your network).
 
-Studio features: intent file picker + JSON editor with live validation, one-click suite
+App features: intent file picker + JSON editor with live validation, one-click suite
 runs with a segmented progress meter, per-test verdict rail with assertion details and
 timings, "Generate from requirement" drawer (needs ANTHROPIC_API_KEY or OPENAI_API_KEY),
 and every run auto-saved to `reports/` with the Jira/GitHub requirement ref.

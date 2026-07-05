@@ -1,5 +1,5 @@
 @echo off
-REM Intent Automation Studio - native Windows app
+REM Intent Automation - native Windows app
 cd /d "%~dp0"
 
 where python >nul 2>nul
@@ -25,7 +25,7 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-echo Starting Intent Automation Studio...
+echo Starting Intent Automation...
 %PY% app\desktop.py
 if %errorlevel% neq 0 (
     echo.

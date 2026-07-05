@@ -1,5 +1,5 @@
 """
-OwnTest Studio server.
+Intent Automation server.
 Same server powers both the browser UI (http://127.0.0.1:8700)
 and the native Windows window (app/desktop.py).
 """
@@ -155,5 +155,5 @@ def run_server(host="127.0.0.1", port=None, debug=False):
 
 if __name__ == "__main__":
     p = pick_port()
-    print(f"Intent Automation Studio → http://127.0.0.1:{p}")
+    print(f"Intent Automation → http://127.0.0.1:{p}")
     run_server(port=p)

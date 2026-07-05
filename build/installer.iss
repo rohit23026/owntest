@@ -1,9 +1,9 @@
-; Inno Setup script for Intent Automation Studio.
+; Inno Setup script for Intent Automation.
 ; Produces the single file end users receive: IntentAutomation-Setup.exe
 ; Build (after PyInstaller): iscc build\installer.iss
 ; Download Inno Setup: https://jrsoftware.org/isdl.php
 
-#define AppName "Intent Automation Studio"
+#define AppName "Intent Automation"
 #define AppVersion "0.1.0"
 #define AppExe "IntentAutomation.exe"
 

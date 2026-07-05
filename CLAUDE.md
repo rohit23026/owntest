@@ -39,7 +39,7 @@ python3 -m owntest.runner examples/orders_api_intent.json
 python3 -m owntest.runner my_intent.json --headed        # watch UI tests run
 python3 -m owntest.runner my_intent.json --api-base-url http://host:port
 
-# Studio app (Flask server + static UI)
+# The app (Flask server + static UI)
 python app/server.py                 # browser UI at http://127.0.0.1:8700
 python app/desktop.py                # native WebView2 window, same server
 ```

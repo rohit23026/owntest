@@ -4,7 +4,7 @@
     {
       "name": "studio",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-c", "import sys; sys.path.insert(0, 'app'); import server; print('Intent Automation Studio -> http://127.0.0.1:8701'); server.run_server(port=8701)"],
+      "runtimeArgs": ["-c", "import sys; sys.path.insert(0, 'app'); import server; print('Intent Automation -> http://127.0.0.1:8701'); server.run_server(port=8701)"],
       "port": 8701
     },
     {
