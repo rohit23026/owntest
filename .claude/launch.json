@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "studio",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-c", "import sys; sys.path.insert(0, 'app'); import server; print('OwnTest Studio -> http://127.0.0.1:8701'); server.run_server(port=8701)"],
+      "port": 8701
+    },
+    {
+      "name": "demo-api",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["tests/demo_server.py"],
+      "port": 8077
+    }
+  ]
+}
