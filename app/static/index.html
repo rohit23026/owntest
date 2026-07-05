@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OwnTest Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#14171c; --panel:#1b1f26; --panel-2:#20252e; --line:#2c3340;
+  --ink:#dde3ec; --ink-dim:#8b94a3; --amber:#e8a33d; --amber-dim:#7a5a26;
+  --pass:#3fb96a; --fail:#e05252; --run:#e8a33d;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --disp:'Space Grotesk',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--mono);font-size:13px;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* ---------- top bar ---------- */
+header{display:flex;align-items:center;gap:20px;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--panel)}
+header h1{font-family:var(--disp);font-size:17px;font-weight:700;letter-spacing:.04em}
+header h1 span{color:var(--amber)}
+.meter{flex:1;display:flex;gap:3px;height:10px;max-width:420px}
+.meter i{flex:1;background:var(--panel-2);border-radius:1px;transition:background .25s}
+.meter i.p{background:var(--pass)} .meter i.f{background:var(--fail)} .meter i.r{background:var(--run);animation:pulse 1s infinite alternate}
+@keyframes pulse{to{opacity:.35}}
+.tally{color:var(--ink-dim);white-space:nowrap;min-width:130px;text-align:right}
+.tally b.ok{color:var(--pass)} .tally b.bad{color:var(--fail)}
+button{font-family:var(--mono);font-size:13px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);padding:8px 16px;border-radius:4px;cursor:pointer}
+button:hover{border-color:var(--amber-dim)}
+button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+button.primary{background:var(--amber);border-color:var(--amber);color:#181205;font-weight:600}
+button.primary:disabled{opacity:.5;cursor:default}
+
+/* ---------- layout ---------- */
+main{flex:1;display:grid;grid-template-columns:minmax(360px,44%) 1fr;min-height:0}
+section{display:flex;flex-direction:column;min-height:0}
+section+section{border-left:1px solid var(--line)}
+.sec-head{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line);color:var(--ink-dim);font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+.sec-head select{background:var(--panel-2);color:var(--ink);border:1px solid var(--line);font-family:var(--mono);padding:4px 8px;border-radius:4px}
+.sec-head .spacer{flex:1}
+
+/* ---------- editor ---------- */
+#editor{flex:1;background:var(--panel);color:var(--ink);border:0;resize:none;padding:16px;font-family:var(--mono);font-size:12.5px;line-height:1.55;tab-size:2}
+#editor:focus{outline:none;background:#1d222b}
+.editor-foot{display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--line);align-items:center}
+#jsonstate{color:var(--ink-dim);font-size:11px}
+#jsonstate.bad{color:var(--fail)}
+
+/* ---------- generate drawer ---------- */
+#gen{border-top:1px solid var(--line);padding:12px 16px;display:none;flex-direction:column;gap:8px;background:var(--panel-2)}
+#gen.open{display:flex}
+#gen textarea{background:var(--panel);border:1px solid var(--line);color:var(--ink);font-family:var(--mono);font-size:12.5px;padding:10px;border-radius:4px;resize:vertical;min-height:64px}
+#gen .row{display:flex;gap:8px;align-items:center}
+#gen input{background:var(--panel);border:1px solid var(--line);color:var(--ink);font-family:var(--mono);padding:6px 10px;border-radius:4px;flex:1}
+
+/* ---------- results ---------- */
+#results{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.empty{color:var(--ink-dim);padding:40px 20px;text-align:center;line-height:1.8}
+.empty b{color:var(--amber)}
+.test{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden;display:flex}
+.rail{width:6px;flex-shrink:0}
+.rail.p{background:var(--pass)} .rail.f{background:var(--fail)}
+.test-body{flex:1;padding:10px 14px}
+.test-top{display:flex;align-items:baseline;gap:10px}
+.test-top .id{font-weight:600}
+.test-top .type{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);border:1px solid var(--amber-dim);padding:1px 6px;border-radius:3px}
+.test-top .ms{margin-left:auto;color:var(--ink-dim);font-size:11px}
+.checks{margin-top:8px;display:flex;flex-direction:column;gap:4px}
+.check{display:flex;gap:8px;font-size:12px;color:var(--ink-dim)}
+.check .dot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.check.p .dot{background:var(--pass)} .check.f .dot{background:var(--fail)}
+.check.f{color:var(--ink)}
+.check .detail{color:var(--ink-dim)}
+.err{margin-top:8px;color:var(--fail);font-size:12px;white-space:pre-wrap}
+
+@media (prefers-reduced-motion:reduce){.meter i.r{animation:none}}
+@media (max-width:900px){main{grid-template-columns:1fr}section+section{border-left:0;border-top:1px solid var(--line)}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>OWN<span>TEST</span> STUDIO</h1>
+  <div class="meter" id="meter" aria-label="run progress"></div>
+  <div class="tally" id="tally">idle</div>
+  <button id="btn-gen-toggle">Generate from requirement</button>
+  <button class="primary" id="btn-run">Run suite</button>
+</header>
+
+<main>
+  <section>
+    <div class="sec-head">
+      Test intent
+      <select id="file-select" aria-label="intent file"></select>
+      <span class="spacer"></span>
+      <span id="jsonstate">valid json</span>
+    </div>
+    <textarea id="editor" spellcheck="false" aria-label="test intent json"></textarea>
+    <div id="gen">
+      <textarea id="gen-req" placeholder="Paste the requirement / user story / acceptance criteria here…"></textarea>
+      <div class="row">
+        <input id="gen-ref" placeholder="Requirement ref (e.g. JIRA-101)">
+        <button id="btn-gen">Generate tests</button>
+      </div>
+    </div>
+    <div class="editor-foot">
+      <button id="btn-save">Save file</button>
+      <span id="savestate" style="color:var(--ink-dim);font-size:11px"></span>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">Results <span class="spacer"></span><span id="suite-ref" style="text-transform:none;letter-spacing:0"></span></div>
+    <div id="results">
+      <div class="empty">No run yet.<br>Load an intent file, press <b>Run suite</b>,<br>and results appear here with full traceability.</div>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+let currentFile = null;
+
+/* ---------- intent files ---------- */
+async function loadFileList(){
+  const files = await (await fetch('/api/intents')).json();
+  $('file-select').innerHTML = files.map(f=>`<option>${f}</option>`).join('');
+  if(files.length) loadFile(files[0]);
+}
+async function loadFile(name){
+  currentFile = name;
+  const data = await (await fetch('/api/intent/'+name)).json();
+  $('editor').value = JSON.stringify(data, null, 2);
+  validate();
+}
+$('file-select').onchange = e => loadFile(e.target.value);
+
+/* ---------- editor validation ---------- */
+function validate(){
+  try{ JSON.parse($('editor').value);
+    $('jsonstate').textContent='valid json'; $('jsonstate').className=''; return true;
+  }catch(e){
+    $('jsonstate').textContent='invalid: '+e.message.slice(0,60); $('jsonstate').className='bad'; return false;
+  }
+}
+$('editor').addEventListener('input', validate);
+
+$('btn-save').onclick = async ()=>{
+  if(!validate()) return;
+  await fetch('/api/intent/'+currentFile,{method:'POST',headers:{'Content-Type':'application/json'},body:$('editor').value});
+  $('savestate').textContent='saved '+new Date().toLocaleTimeString();
+};
+
+/* ---------- run ---------- */
+$('btn-run').onclick = async ()=>{
+  if(!validate()) return;
+  const intent = JSON.parse($('editor').value);
+  const n = (intent.tests||[]).length;
+  buildMeter(n); setTally('running…');
+  $('btn-run').disabled = true;
+  const {run_id} = await (await fetch('/api/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({intent})})).json();
+  poll(run_id);
+};
+
+function buildMeter(n){
+  $('meter').innerHTML = Array.from({length:n},()=>'<i class="r"></i>').join('');
+}
+function setTally(html){ $('tally').innerHTML = html; }
+
+async function poll(id){
+  const run = await (await fetch('/api/run/'+id)).json();
+  if(run.status==='running'){ setTimeout(()=>poll(id), 500); return; }
+  $('btn-run').disabled = false;
+  if(run.status==='error'){
+    setTally('<b class="bad">engine error</b>');
+    $('results').innerHTML = `<div class="err">${esc(run.error)}</div>`;
+    return;
+  }
+  render(run.report);
+}
+
+/* ---------- render report ---------- */
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+function render(r){
+  const segs = r.results.map(t=>`<i class="${t.passed?'p':'f'}"></i>`).join('');
+  $('meter').innerHTML = segs;
+  setTally(`<b class="ok">${r.passed} pass</b> · <b class="bad">${r.failed} fail</b>`);
+  $('suite-ref').textContent = r.requirement_ref || r.suite;
+  $('results').innerHTML = r.results.map(t=>`
+    <div class="test">
+      <div class="rail ${t.passed?'p':'f'}"></div>
+      <div class="test-body">
+        <div class="test-top">
+          <span class="id">${esc(t.test_id)}</span>
+          <span class="type">${esc(t.test_type)}</span>
+          <span class="ms">${t.duration_ms} ms</span>
+        </div>
+        ${t.checks.length?`<div class="checks">${t.checks.map(c=>`
+          <div class="check ${c.passed?'p':'f'}"><span class="dot"></span>
+            <span>${esc(c.description)} <span class="detail">— ${esc(c.detail)}</span></span>
+          </div>`).join('')}</div>`:''}
+        ${t.error?`<div class="err">${esc(t.error)}</div>`:''}
+      </div>
+    </div>`).join('');
+}
+
+/* ---------- generate from requirement ---------- */
+$('btn-gen-toggle').onclick = ()=> $('gen').classList.toggle('open');
+$('btn-gen').onclick = async ()=>{
+  $('btn-gen').disabled = true; $('btn-gen').textContent = 'Generating…';
+  const res = await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({requirement:$('gen-req').value, requirement_ref:$('gen-ref').value})});
+  const data = await res.json();
+  $('btn-gen').disabled = false; $('btn-gen').textContent = 'Generate tests';
+  if(data.error){ alert(data.error); return; }
+  $('editor').value = JSON.stringify(data, null, 2); validate();
+  $('gen').classList.remove('open');
+};
+
+loadFileList();
+</script>
+</body>
+</html>

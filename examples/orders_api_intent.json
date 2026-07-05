@@ -1,0 +1,52 @@
+{
+  "suite": "orders-api",
+  "requirement_ref": "JIRA-101: user can create and retrieve orders",
+  "api_base_url": "http://127.0.0.1:8077",
+  "tests": [
+    {
+      "id": "api-health",
+      "type": "api",
+      "request": {"method": "GET", "path": "/health"},
+      "assertions": [
+        {"type": "status", "equals": 200},
+        {"type": "json_path", "path": "status", "equals": "ok"},
+        {"type": "header", "name": "content-type", "contains": "json"},
+        {"type": "max_ms", "value": 2000}
+      ]
+    },
+    {
+      "id": "api-create-order-happy",
+      "type": "api",
+      "request": {"method": "POST", "path": "/orders", "json": {"sku": "ABC-1", "qty": 2}},
+      "assertions": [
+        {"type": "status", "equals": 201},
+        {"type": "json_path", "path": "order.sku", "equals": "ABC-1"},
+        {"type": "json_path", "path": "order.qty", "equals": 2}
+      ]
+    },
+    {
+      "id": "api-create-order-negative-qty",
+      "type": "api",
+      "request": {"method": "POST", "path": "/orders", "json": {"sku": "ABC-1", "qty": 0}},
+      "assertions": [
+        {"type": "status", "equals": 422},
+        {"type": "json_path", "path": "error", "contains": "qty"}
+      ]
+    },
+    {
+      "id": "api-get-missing-order",
+      "type": "api",
+      "request": {"method": "GET", "path": "/orders/9999"},
+      "assertions": [{"type": "status", "equals": 404}]
+    },
+    {
+      "id": "api-list-orders",
+      "type": "api",
+      "request": {"method": "GET", "path": "/orders"},
+      "assertions": [
+        {"type": "status", "equals": 200},
+        {"type": "json_path", "path": "orders", "length": 1}
+      ]
+    }
+  ]
+}
