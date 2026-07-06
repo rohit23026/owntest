@@ -69,6 +69,24 @@ Kafka / DB), edit the variable table on the right, one table per named environme
 you can't accidentally hit the wrong host with a half-resolved script. Stored in SQLite
 at `%APPDATA%\OwnTest\config.db` (or `~/.owntest/`).
 
+## Data-driven testing
+Give a test a `data` table and it runs once per row — `{{data.column}}` pulls the
+row's values into steps, request bodies, and assertions:
+```json
+{"id": "api-create-order", "type": "api",
+ "request": {"method": "POST", "path": "/orders",
+             "json": {"sku": "{{data.sku}}", "qty": "{{data.qty}}"}},
+ "assertions": [{"type": "status", "equals": "{{data.status}}"}],
+ "data": [
+   {"sku": "ABC-1", "qty": 2,  "status": 201},
+   {"sku": "BAD-0", "qty": 0,  "status": 422}
+ ]}
+```
+Each row reports separately (`api-create-order [2/2]`), so a failing data row is
+distinguishable from a failing test. In the app, every test has an editable Data
+table under its steps — no JSON required; the main page is fully table-driven
+(pack dropdown → test cases → steps/request tables), with a `{ }` toggle for raw JSON.
+
 ## Generate tests with an LLM
 ```python
 from owntest.llm.provider import generate_test_intent, get_provider
@@ -127,9 +145,12 @@ One codebase, two doors:
 - **Browser**: `run_browser.bat` (or `python app/server.py`) then open http://127.0.0.1:8700
   — same UI, usable from any browser (and later, by teammates on your network).
 
-App features: intent file picker + JSON editor with live validation, one-click suite
+App features: table-driven test editing organized in packs (UI / API / Kafka / DB —
+no JSON in sight, with a `{ }` raw-view escape hatch), editable step/request/assertion
+tables, a per-test data table for data-driven runs, per-test ▶ and one-click pack
 runs with a segmented progress meter, per-test verdict rail with assertion details and
-timings, "Generate from requirement" drawer (needs ANTHROPIC_API_KEY or OPENAI_API_KEY),
-and every run auto-saved to `reports/` with the Jira/GitHub requirement ref.
+timings, ⚙ environments & variables, "Generate from requirement" drawer (needs
+ANTHROPIC_API_KEY or OPENAI_API_KEY), and every run auto-saved to `reports/` with the
+Jira/GitHub requirement ref. Examples are pre-loaded into the packs on first run.
 
 To ship it as a single .exe later: `pyinstaller --onefile --add-data "app/static;app/static" app/desktop.py`

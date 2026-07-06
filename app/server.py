@@ -43,6 +43,47 @@ if os.path.isdir(_bundled_examples) and not os.listdir(EXAMPLES_DIR):
         if f.endswith(".json"):
             shutil.copy(os.path.join(_bundled_examples, f), EXAMPLES_DIR)
 
+# The app shows one document per pack (ui/api/kafka/db) — users never pick
+# files. Build each pack file once by collecting that type's tests from any
+# other intent files present (including the examples seeded above).
+PACK_FILES = ("ui", "api", "kafka", "db")
+
+def _seed_pack_files():
+    for pack in PACK_FILES:
+        path = os.path.join(EXAMPLES_DIR, f"{pack}.json")
+        if os.path.exists(path):
+            continue
+        tests = []
+        for f in sorted(os.listdir(EXAMPLES_DIR)):
+            if not f.endswith(".json") or f in {f"{p}.json" for p in PACK_FILES}:
+                continue
+            try:
+                with open(os.path.join(EXAMPLES_DIR, f)) as fh:
+                    d = json.load(fh)
+                tests += [t for t in d.get("tests", []) if t.get("type") == pack]
+            except Exception:
+                pass
+        doc = {"suite": f"{pack}-pack", "tests": tests}
+        if pack == "api":
+            doc["api_base_url"] = "{{api.base_url}}"
+        with open(path, "w") as fh:
+            json.dump(doc, fh, indent=2)
+
+def _seed_default_config():
+    """Make the seeded examples runnable out of the box with the default env."""
+    from owntest import config_store
+    for cat, key, val, desc in (
+        ("api", "base_url", "http://127.0.0.1:8077", "demo orders API (tests/demo_server.py)"),
+        ("ui", "home", "https://example.com", "example landing page"),
+    ):
+        rows = config_store.get_rows(cat, "default")
+        if not any(r["key"] == key for r in rows):
+            rows.append({"key": key, "value": val, "description": desc})
+            config_store.save_rows(cat, "default", rows)
+
+_seed_pack_files()
+_seed_default_config()
+
 
 def pick_port(preferred: int = 8700) -> int:
     """Use the preferred port; if something else has it, grab any free one."""
@@ -97,8 +138,9 @@ def _execute(run_id: str, intent: dict, headed: bool, browser: str | None = None
              env: str | None = None):
     from owntest.runner import run_suite
     try:
+        stop_ev = RUNS[run_id]["stop_event"]
         report = asyncio.run(run_suite(intent, headless=not headed, browser=browser,
-                                       env=env))
+                                       env=env, should_stop=stop_ev.is_set))
         RUNS[run_id].update(status="done", report=report)
         stamp = time.strftime("%Y%m%d-%H%M%S")
         with open(os.path.join(REPORTS_DIR, f"{stamp}-{report['suite']}.json"), "w") as f:
@@ -113,7 +155,8 @@ def start_run():
     intent = body["intent"]
     run_id = uuid.uuid4().hex[:12]
     RUNS[run_id] = {"status": "running", "started": time.time(),
-                    "total": len(intent.get("tests", []))}
+                    "total": len(intent.get("tests", [])),
+                    "stop_event": threading.Event()}
     threading.Thread(target=_execute,
                      args=(run_id, intent, body.get("headed", False),
                            body.get("browser"), body.get("env")),
@@ -126,7 +169,16 @@ def run_status(run_id):
     run = RUNS.get(run_id)
     if not run:
         return jsonify({"error": "unknown run"}), 404
-    return jsonify(run)
+    return jsonify({k: v for k, v in run.items() if k != "stop_event"})
+
+
+@app.post("/api/run/<run_id>/stop")
+def run_stop(run_id):
+    run = RUNS.get(run_id)
+    if not run:
+        return jsonify({"error": "unknown run"}), 404
+    run["stop_event"].set()   # runner finishes the current test, then stops
+    return jsonify({"stopping": True})
 
 
 # ---------- configuration (environments + variables) ----------

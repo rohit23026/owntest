@@ -94,6 +94,21 @@ stores them in SQLite (`config.db` in the user data dir, edited via the app's �
 and `run_suite(env=...)` resolves them before execution — failing loud on undefined
 variables or a missing environment, never running with a literal placeholder.
 
+Data-driven testing: a test may carry a `"data"` list of row objects; the runner
+(`_expand_data`) runs the test once per row, resolving `{{data.column}}` placeholders
+(a string that is exactly one placeholder keeps the row value's type, so numbers
+survive into JSON bodies). Each iteration reports separately as `id [2/4]`.
+`{{data.*}}` is reserved — environment substitution never touches it.
+
+The app's main page is table-driven (no JSON editing needed): a pack dropdown
+(ui/api/kafka/db) selects the pack, each test opens editable step/request/assertion
+tables plus its data table (`{ }` button shows the raw document). Per-test ▶ runs a
+single test. There is no file picker — the app keeps exactly one intent document per
+pack (`<pack>.json` in the user data dir's `intents/`), seeded on first run from the
+bundled examples (tests merged by type) and from default-env config values
+(`api.base_url` → the demo API) so the examples run out of the box. The CLI still
+runs any intent file directly, including the pack files.
+
 **CDP layer is the actual browser automation engine**, not a wrapper around one:
 - [owntest/cdp/client.py](owntest/cdp/client.py) — one WebSocket per tab, request/response
   correlation by message id, event subscription (`on()` / `wait_for_event()`).
@@ -128,7 +143,9 @@ window via `app/desktop.py` + pywebview). It's frozen-app aware: `sys.frozen` an
 reports) is deliberately kept out of the install directory — it lives under `%APPDATA%\OwnTest`
 (or `~/.owntest`) since Program Files is read-only. On first run it seeds that directory
 from the bundled `examples/`. Runs execute in a background thread and are polled via
-`/api/run/<run_id>`, not returned synchronously.
+`/api/run/<run_id>`, not returned synchronously. `POST /api/run/<run_id>/stop` requests
+cooperative cancellation: the runner checks between tests/iterations (never mid-step),
+finishes the current test, and returns a partial report with `"stopped": true`.
 
 ## Known gaps (relevant when extending the UI engine)
 

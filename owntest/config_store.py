@@ -131,6 +131,9 @@ def substitute(obj, environment: str | None):
                 scan(v)
 
     scan(obj)
+    # {{data.*}} belongs to data-driven iteration, resolved per-row by the
+    # runner — environment substitution must leave it untouched.
+    found = {n for n in found if not n.startswith("data.")}
     if not found:
         return obj
     if environment is None:
@@ -146,7 +149,51 @@ def substitute(obj, environment: str | None):
 
     def walk(o):
         if isinstance(o, str):
-            return _PLACEHOLDER.sub(lambda m: vars_[m.group(1)], o)
+            return _PLACEHOLDER.sub(
+                lambda m: vars_.get(m.group(1), m.group(0)), o)  # data.* stays
+        if isinstance(o, dict):
+            return {k: walk(v) for k, v in o.items()}
+        if isinstance(o, list):
+            return [walk(v) for v in o]
+        return o
+
+    return walk(obj)
+
+
+def substitute_data(obj, row: dict, test_id: str = "?"):
+    """
+    Resolve {{data.column}} placeholders from one data row (one iteration of a
+    data-driven test). A string that is exactly one placeholder takes the row
+    value with its original type ("{{data.qty}}" -> 2, not "2"), so numbers
+    survive into JSON request bodies and assertions.
+    """
+    found: set[str] = set()
+
+    def scan(o):
+        if isinstance(o, str):
+            found.update(n for n in _PLACEHOLDER.findall(o) if n.startswith("data."))
+        elif isinstance(o, dict):
+            for v in o.values():
+                scan(v)
+        elif isinstance(o, list):
+            for v in o:
+                scan(v)
+
+    scan(obj)
+    missing = sorted(n for n in found if n[5:] not in row)
+    if missing:
+        raise RuntimeError(
+            f"undefined data column(s) {missing} in test {test_id!r} — "
+            f"add the column to its data table")
+
+    def walk(o):
+        if isinstance(o, str):
+            m = _PLACEHOLDER.fullmatch(o)
+            if m and m.group(1).startswith("data."):
+                return row[m.group(1)[5:]]          # exact match keeps the type
+            return _PLACEHOLDER.sub(
+                lambda m: str(row[m.group(1)[5:]]) if m.group(1).startswith("data.")
+                else m.group(0), o)
         if isinstance(o, dict):
             return {k: walk(v) for k, v in o.items()}
         if isinstance(o, list):

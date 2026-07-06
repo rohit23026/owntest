@@ -120,21 +120,50 @@ async def run_ui_test(test: dict, page) -> TestResult:
 
 
 # ---------------- Suite orchestration ----------------
+def _expand_data(tests: list[dict]) -> list[dict]:
+    """A test with a "data" table runs once per row — data-driven testing.
+    Each iteration becomes its own result: 'ui-login [2/3]'."""
+    from .config_store import substitute_data
+    out = []
+    for t in tests:
+        rows = t.get("data")
+        if not rows:
+            out.append(t)
+            continue
+        base = {k: v for k, v in t.items() if k != "data"}
+        for i, row in enumerate(rows, 1):
+            ti = substitute_data(base, row, t.get("id", "?"))
+            ti["id"] = f"{t.get('id', '?')} [{i}/{len(rows)}]"
+            out.append(ti)
+    return out
+
+
 async def run_suite(intent: dict, api_base_url: str = "",
                     headless: bool = True, browser: str | None = None,
-                    env: str | None = None) -> dict:
+                    env: str | None = None, should_stop=None) -> dict:
+    """should_stop: optional zero-arg callable checked between tests/iterations —
+    the current test always finishes cleanly (no mid-step aborts)."""
     from .config_store import substitute
     intent = substitute(intent, env)   # resolve {{category.key}} placeholders
     api_engine = HttpEngine(base_url=api_base_url or intent.get("api_base_url", ""))
     results: list[TestResult] = []
+    stopped = False
 
-    ui_tests = [t for t in intent["tests"] if t["type"] == "ui"]
-    api_tests = [t for t in intent["tests"] if t["type"] == "api"]
+    def _stop() -> bool:
+        nonlocal stopped
+        stopped = stopped or bool(should_stop and should_stop())
+        return stopped
+
+    tests = _expand_data(intent["tests"])
+    ui_tests = [t for t in tests if t["type"] == "ui"]
+    api_tests = [t for t in tests if t["type"] == "api"]
 
     for t in api_tests:
+        if _stop():
+            break
         results.append(run_api_test(t, api_engine))
 
-    if ui_tests:
+    if ui_tests and not _stop():
         from .cdp.browser import Browser
         from .ui.page import Page
         # explicit arg wins, else the suite may name a browser, else default
@@ -144,6 +173,8 @@ async def run_suite(intent: dict, api_base_url: str = "",
             client = await b.new_page_client()
             page = Page(client)
             for t in ui_tests:
+                if _stop():
+                    break
                 results.append(await run_ui_test(t, page))
             await client.close()
         finally:
@@ -156,6 +187,7 @@ async def run_suite(intent: dict, api_base_url: str = "",
         "total": len(results),
         "passed": passed,
         "failed": len(results) - passed,
+        "stopped": stopped,
         "results": [r.__dict__ for r in results],
     }
 

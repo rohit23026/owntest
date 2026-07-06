@@ -32,6 +32,7 @@ button:hover{border-color:var(--amber-dim)}
 button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 button.primary{background:var(--amber);border-color:var(--amber);color:#181205;font-weight:600}
 button.primary:disabled{opacity:.5;cursor:default}
+button.primary.stop{background:var(--fail);border-color:var(--fail);color:#fff}
 .headed{display:flex;align-items:center;gap:6px;color:var(--ink-dim);white-space:nowrap;cursor:pointer;user-select:none}
 .headed input{accent-color:var(--amber);cursor:pointer}
 .headed:hover{color:var(--ink)}
@@ -52,40 +53,64 @@ header select{background:var(--panel-2);color:var(--ink);border:1px solid var(--
 table.cfg{width:100%;border-collapse:collapse}
 table.cfg th{text-align:left;color:var(--ink-dim);font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:6px 10px;border-bottom:1px solid var(--line)}
 table.cfg td{padding:4px 6px;border-bottom:1px solid var(--line)}
-table.cfg td input{width:100%;background:var(--panel);border:1px solid transparent;color:var(--ink);font-family:var(--mono);font-size:12.5px;padding:7px 8px;border-radius:4px}
+table.cfg td input,table.cfg td select{width:100%;background:var(--panel);border:1px solid transparent;color:var(--ink);font-family:var(--mono);font-size:12.5px;padding:7px 8px;border-radius:4px}
 table.cfg td input:hover{border-color:var(--line)}
 table.cfg td input:focus{outline:none;border-color:var(--amber-dim);background:#1d222b}
+table.cfg td select{border-color:var(--line)}
 table.cfg td.del{width:34px;text-align:center}
-table.cfg td.del button{padding:4px 8px;color:var(--ink-dim);border:0;background:none}
+table.cfg td.del button,button.mini{padding:4px 8px;color:var(--ink-dim);border:0;background:none}
 table.cfg td.del button:hover{color:var(--fail)}
+button.mini:hover{color:var(--amber)}
 .cfg-foot{display:flex;gap:10px;align-items:center;padding:12px 20px;border-top:1px solid var(--line)}
 .cfg-hint{color:var(--ink-dim);font-size:11px}
 .cfg-hint code{color:var(--amber)}
 
-/* ---------- layout ---------- */
-main{flex:1;display:grid;grid-template-columns:minmax(360px,44%) 1fr;min-height:0}
+/* ---------- main: tests + detail ---------- */
+main{flex:1;display:grid;grid-template-columns:minmax(360px,40%) 1fr;min-height:0}
 section{display:flex;flex-direction:column;min-height:0}
 section+section{border-left:1px solid var(--line)}
 .sec-head{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line);color:var(--ink-dim);font-size:11px;letter-spacing:.12em;text-transform:uppercase}
 .sec-head select{background:var(--panel-2);color:var(--ink);border:1px solid var(--line);font-family:var(--mono);padding:4px 8px;border-radius:4px}
 .sec-head .spacer{flex:1}
+.pane{flex:1;overflow-y:auto;padding:14px 16px}
+tr.sel td{background:#232936}
+tr.trow{cursor:pointer}
+#tests-table td .runone{padding:2px 9px;color:var(--pass);border:1px solid var(--line);background:none;border-radius:4px}
+#tests-table td .runone:hover{border-color:var(--pass)}
+.var-in{border-color:var(--amber-dim)!important}
+.subhead{margin:18px 0 6px;color:var(--ink-dim);font-size:11px;letter-spacing:.12em;text-transform:uppercase;display:flex;align-items:center;gap:10px}
+.subhead .n{color:var(--amber)}
 
-/* ---------- editor ---------- */
-#editor{flex:1;background:var(--panel);color:var(--ink);border:0;resize:none;padding:16px;font-family:var(--mono);font-size:12.5px;line-height:1.55;tab-size:2}
+/* editor (JSON escape hatch) */
+#editor{display:none;flex:1;background:var(--panel);color:var(--ink);border:0;resize:none;padding:16px;font-family:var(--mono);font-size:12.5px;line-height:1.55;tab-size:2}
 #editor:focus{outline:none;background:#1d222b}
+#editor.open{display:block}
 .editor-foot{display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--line);align-items:center}
 #jsonstate{color:var(--ink-dim);font-size:11px}
 #jsonstate.bad{color:var(--fail)}
 
-/* ---------- generate drawer ---------- */
+/* tabs (right panel) */
+.tab{background:none;border:0;border-bottom:2px solid transparent;border-radius:0;padding:4px 2px;color:var(--ink-dim);letter-spacing:.12em;text-transform:uppercase;font-size:11px}
+.tab.active{color:var(--amber);border-bottom-color:var(--amber)}
+
+/* generate drawer */
 #gen{border-top:1px solid var(--line);padding:12px 16px;display:none;flex-direction:column;gap:8px;background:var(--panel-2)}
 #gen.open{display:flex}
 #gen textarea{background:var(--panel);border:1px solid var(--line);color:var(--ink);font-family:var(--mono);font-size:12.5px;padding:10px;border-radius:4px;resize:vertical;min-height:64px}
 #gen .row{display:flex;gap:8px;align-items:center}
 #gen input{background:var(--panel);border:1px solid var(--line);color:var(--ink);font-family:var(--mono);padding:6px 10px;border-radius:4px;flex:1}
 
-/* ---------- results ---------- */
-#results{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+/* variable popup */
+#varpop{position:fixed;z-index:50;background:var(--panel-2);border:1px solid var(--amber-dim);border-radius:6px;padding:12px 14px;max-width:420px;display:none;box-shadow:0 8px 30px #0009}
+#varpop h4{color:var(--amber);font-size:12px;margin-bottom:6px}
+#varpop .vrow{padding:3px 0;color:var(--ink-dim);font-size:12px}
+#varpop .vrow b{color:var(--ink)}
+#varpop a{color:var(--amber);cursor:pointer;font-size:11px}
+
+/* results */
+#results{display:none;flex-direction:column;gap:10px}
+#results.open{display:flex}
+#detail.hide{display:none}
 .empty{color:var(--ink-dim);padding:40px 20px;text-align:center;line-height:1.8}
 .empty b{color:var(--amber)}
 .test{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden;display:flex}
@@ -159,10 +184,20 @@ section+section{border-left:1px solid var(--line)}
 <main>
   <section>
     <div class="sec-head">
-      Test intent
-      <select id="file-select" aria-label="intent file"></select>
+      Pack
+      <select id="pack-select" aria-label="pack">
+        <option value="ui">UI</option><option value="api">API</option>
+        <option value="kafka">Kafka</option><option value="db">DB</option>
+      </select>
       <span class="spacer"></span>
-      <span id="jsonstate">valid json</span>
+      <button class="mini" id="btn-json" title="toggle raw JSON view">{&hairsp;}</button>
+    </div>
+    <div class="pane" id="tests-pane">
+      <table class="cfg" id="tests-table">
+        <thead><tr><th>Test case</th><th style="width:90px">Size</th><th style="width:60px"></th></tr></thead>
+        <tbody id="tests-body"></tbody>
+      </table>
+      <div class="subhead"><button class="mini" id="btn-new-test">+ New test</button></div>
     </div>
     <textarea id="editor" spellcheck="false" aria-label="test intent json"></textarea>
     <div id="gen">
@@ -175,73 +210,353 @@ section+section{border-left:1px solid var(--line)}
     <div class="editor-foot">
       <button id="btn-save">Save file</button>
       <span id="savestate" style="color:var(--ink-dim);font-size:11px"></span>
+      <span class="spacer" style="flex:1"></span>
+      <span id="jsonstate"></span>
     </div>
   </section>
 
   <section>
-    <div class="sec-head">Results <span class="spacer"></span><span id="suite-ref" style="text-transform:none;letter-spacing:0"></span></div>
-    <div id="results">
-      <div class="empty">No run yet.<br>Load an intent file, press <b>Run suite</b>,<br>and results appear here with full traceability.</div>
+    <div class="sec-head">
+      <button class="tab active" id="tab-detail">Steps</button>
+      <button class="tab" id="tab-results">Results</button>
+      <span class="spacer"></span><span id="suite-ref" style="text-transform:none;letter-spacing:0"></span>
+    </div>
+    <div class="pane">
+      <div id="detail"><div class="empty">Select a test case on the left.</div></div>
+      <div id="results"><div class="empty">No run yet.<br>Press <b>Run suite</b> or a test's <b>&#9654;</b>.</div></div>
     </div>
   </section>
 </main>
 
+<div id="varpop"></div>
+
 <script>
 const $ = id => document.getElementById(id);
-let currentFile = null;
+const esc = s => String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const VAR_RE = /\{\{\s*([A-Za-z0-9_.-]+)\s*\}\}/g;
 
-/* ---------- intent files ---------- */
-async function loadFileList(){
-  const files = await (await fetch('/api/intents')).json();
-  $('file-select').innerHTML = files.map(f=>`<option>${f}</option>`).join('');
-  if(files.length) loadFile(files[0]);
-}
-async function loadFile(name){
-  currentFile = name;
-  const data = await (await fetch('/api/intent/'+name)).json();
-  $('editor').value = JSON.stringify(data, null, 2);
-  validate();
-}
-$('file-select').onchange = e => loadFile(e.target.value);
+let doc = null, currentFile = null, selIdx = -1;
 
-/* ---------- editor validation ---------- */
-function validate(){
-  try{ JSON.parse($('editor').value);
-    $('jsonstate').textContent='valid json'; $('jsonstate').className=''; return true;
-  }catch(e){
-    $('jsonstate').textContent='invalid: '+e.message.slice(0,60); $('jsonstate').className='bad'; return false;
-  }
+/* ================= pack documents =================
+   One document per pack (ui.json / api.json / …) — users never pick files;
+   the server seeds packs from the bundled examples on first run. */
+async function loadPack(){
+  const pack = $('pack-select').value;
+  currentFile = pack + '.json';
+  const d = await (await fetch('/api/intent/'+currentFile)).json();
+  doc = (d && !d.error) ? d : {suite: pack+'-pack', tests: []};
+  selIdx = -1;
+  syncEditor(); renderTests(); renderDetail();
 }
-$('editor').addEventListener('input', validate);
+$('pack-select').onchange = loadPack;
 
 $('btn-save').onclick = async ()=>{
-  if(!validate()) return;
-  await fetch('/api/intent/'+currentFile,{method:'POST',headers:{'Content-Type':'application/json'},body:$('editor').value});
+  await fetch('/api/intent/'+currentFile,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(doc)});
   $('savestate').textContent='saved '+new Date().toLocaleTimeString();
 };
 
-/* ---------- run ---------- */
-$('btn-run').onclick = async ()=>{
-  if(!validate()) return;
-  const intent = JSON.parse($('editor').value);
-  const n = (intent.tests||[]).length;
-  buildMeter(n); setTally('running…');
-  $('btn-run').disabled = true;
-  const headed = $('chk-headed').checked;
-  const env = $('env-select').value || null;
-  const {run_id} = await (await fetch('/api/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({intent, headed, env})})).json();
+/* ---------- raw JSON escape hatch ---------- */
+function syncEditor(){ if($('editor').classList.contains('open')) $('editor').value = JSON.stringify(doc,null,2); }
+$('btn-json').onclick = ()=>{
+  const ed = $('editor'), open = ed.classList.toggle('open');
+  $('tests-pane').style.display = open?'none':'';
+  if(open){ ed.value = JSON.stringify(doc,null,2); $('jsonstate').textContent='valid json'; }
+  else $('jsonstate').textContent='';
+};
+$('editor').addEventListener('input', ()=>{
+  try{ doc = JSON.parse($('editor').value);
+    $('jsonstate').textContent='valid json'; $('jsonstate').className='';
+    renderTests(); renderDetail();
+  }catch(e){ $('jsonstate').textContent='invalid: '+e.message.slice(0,50); $('jsonstate').className='bad'; }
+});
+
+/* ================= tests list (left) ================= */
+function packTests(){
+  const pack = $('pack-select').value;
+  return (doc?.tests||[]).map((t,i)=>[t,i]).filter(([t])=>t.type===pack);
+}
+function renderTests(){
+  const pack = $('pack-select').value;
+  if(pack==='kafka'||pack==='db'){
+    $('tests-body').innerHTML = `<tr><td colspan="3" class="empty">${pack.toUpperCase()} engine coming soon —<br>its variables are already configurable in &#9881;</td></tr>`;
+    return;
+  }
+  const rows = packTests().map(([t,i])=>{
+    const size = t.type==='ui' ? `${(t.steps||[]).length} steps` : `${(t.assertions||[]).length} asserts`;
+    const dd = t.data ? ` · ${t.data.length} rows` : '';
+    return `<tr class="trow ${i===selIdx?'sel':''}" data-i="${i}">
+      <td>${esc(t.id||'(unnamed)')}</td><td>${size}${dd}</td>
+      <td class="del"><button class="runone" data-run="${i}" title="run this test">&#9654;</button></td></tr>`;
+  }).join('');
+  $('tests-body').innerHTML = rows || `<tr><td colspan="3" class="empty">No ${pack.toUpperCase()} tests in this file.</td></tr>`;
+  $('tests-body').querySelectorAll('tr.trow').forEach(tr=>{
+    tr.onclick = e=>{
+      if(e.target.dataset.run!==undefined){ runTests([+e.target.dataset.run]); return; }
+      selIdx = +tr.dataset.i; renderTests(); renderDetail(); showTab('detail');
+    };
+  });
+}
+$('btn-new-test').onclick = ()=>{
+  const pack = $('pack-select').value;
+  if(pack!=='ui'&&pack!=='api') return;
+  const id = prompt('Test id (e.g. '+(pack==='ui'?'ui-login':'api-create-order')+'):');
+  if(!id) return;
+  doc.tests = doc.tests||[];
+  doc.tests.push(pack==='ui'
+    ? {id, type:'ui', steps:[{action:'goto', url:''}]}
+    : {id, type:'api', request:{method:'GET', path:'/'}, assertions:[{type:'status', equals:200}]});
+  selIdx = doc.tests.length-1;
+  syncEditor(); renderTests(); renderDetail();
+}
+
+/* ================= detail (right) ================= */
+const STEP_ACTIONS = ['goto','click','type','wait_for','assert_text','assert_url','screenshot'];
+const DATA_KEY = {goto:'url', type:'text', wait_for:'timeout', assert_text:'contains', assert_url:'contains', screenshot:'path'};
+const HAS_SEL  = {click:1, type:1, wait_for:1, assert_text:1};
+const A_TYPES  = ['status','json_path','header','body_contains','max_ms'];
+
+function hasVars(s){ return typeof s==='string' && /\{\{/.test(s); }
+function vcls(s){ return hasVars(s)?'var-in':''; }
+
+function renderDetail(){
+  const host = $('detail');
+  const t = doc?.tests?.[selIdx];
+  if(!t){ host.innerHTML = '<div class="empty">Select a test case on the left.</div>'; return; }
+  host.innerHTML = (t.type==='ui'?uiStepsHtml(t):apiHtml(t)) + dataHtml(t);
+  wireDetail(t);
+}
+
+/* ----- UI steps table ----- */
+function uiStepsHtml(t){
+  const rows = (t.steps||[]).map((s,i)=>`
+    <tr data-i="${i}">
+      <td style="width:26px;color:var(--ink-dim)">${i+1}</td>
+      <td style="width:130px"><select class="act">${STEP_ACTIONS.map(a=>`<option ${a===s.action?'selected':''}>${a}</option>`).join('')}</select></td>
+      <td><input class="tgt ${vcls(s.selector)}" placeholder="${HAS_SEL[s.action]?'#selector':'—'}" value="${esc(s.selector||'')}" ${HAS_SEL[s.action]?'':'disabled'}></td>
+      <td><input class="dat ${vcls(s[DATA_KEY[s.action]])}" placeholder="${DATA_KEY[s.action]||'—'}" value="${esc(s[DATA_KEY[s.action]]??'')}" ${DATA_KEY[s.action]?'':'disabled'}></td>
+      <td class="del" style="width:88px;white-space:nowrap">
+        <button class="mini vbtn" title="variables in this step">&#9673;</button><button class="mini up" title="move up">&#8593;</button><button class="mini dn" title="move down">&#8595;</button><button class="mini rm" title="delete step">&#10005;</button>
+      </td>
+    </tr>`).join('');
+  return `<div class="subhead">Steps — <span class="n">${esc(t.id)}</span></div>
+    <table class="cfg"><thead><tr><th>#</th><th>Action</th><th>Target</th><th>Data</th><th></th></tr></thead>
+    <tbody id="steps-body">${rows}</tbody></table>
+    <div class="subhead"><button class="mini" id="add-step">+ Add step</button></div>`;
+}
+
+/* ----- API request + assertions ----- */
+function aParts(a){
+  switch(a.type){
+    case 'status':        return {field:'', check:'equals', exp:a.equals};
+    case 'json_path':     return {field:a.path, check:'equals' in a?'equals':'contains' in a?'contains':'length' in a?'length':'exists', exp:a.equals??a.contains??a.length??''};
+    case 'header':        return {field:a.name, check:'contains', exp:a.contains};
+    case 'body_contains': return {field:'', check:'contains', exp:a.value};
+    case 'max_ms':        return {field:'', check:'&le; ms', exp:a.value};
+    default:              return {field:'', check:'?', exp:''};
+  }
+}
+function apiHtml(t){
+  const r = t.request||{};
+  const rows = (t.assertions||[]).map((a,i)=>{
+    const p = aParts(a);
+    return `<tr data-i="${i}">
+      <td style="width:120px"><select class="atype">${A_TYPES.map(x=>`<option ${x===a.type?'selected':''}>${x}</option>`).join('')}</select></td>
+      <td><input class="afield ${vcls(p.field)}" placeholder="${a.type==='json_path'?'json path':a.type==='header'?'header name':'—'}" value="${esc(p.field)}" ${a.type==='json_path'||a.type==='header'?'':'disabled'}></td>
+      <td style="width:110px">${a.type==='json_path'?`<select class="achk">${['equals','contains','length','exists'].map(c=>`<option ${c===p.check?'selected':''}>${c}</option>`).join('')}</select>`:`<span style="color:var(--ink-dim)">${p.check}</span>`}</td>
+      <td><input class="aexp ${vcls(String(p.exp))}" value="${esc(p.exp)}"></td>
+      <td class="del"><button class="mini vbtn" title="variables">&#9673;</button><button class="mini rm" title="delete">&#10005;</button></td>
+    </tr>`;
+  }).join('');
+  return `<div class="subhead">Request — <span class="n">${esc(t.id)}</span></div>
+    <table class="cfg"><tbody>
+      <tr><td style="width:110px"><select id="req-method">${['GET','POST','PUT','PATCH','DELETE'].map(m=>`<option ${m===(r.method||'GET')?'selected':''}>${m}</option>`).join('')}</select></td>
+          <td><input id="req-path" class="${vcls(r.path)}" placeholder="/orders" value="${esc(r.path||'')}"></td></tr>
+      <tr><td style="color:var(--ink-dim)">body</td>
+          <td><input id="req-body" class="${vcls(JSON.stringify(r.json)||'')}" placeholder='{"sku":"{{data.sku}}"}' value="${esc(r.json!==undefined?JSON.stringify(r.json):'')}"></td></tr>
+    </tbody></table>
+    <div class="subhead">Assertions</div>
+    <table class="cfg"><thead><tr><th>Type</th><th>Field</th><th>Check</th><th>Expected</th><th></th></tr></thead>
+    <tbody id="asserts-body">${rows}</tbody></table>
+    <div class="subhead"><button class="mini" id="add-assert">+ Add assertion</button></div>`;
+}
+
+/* ----- data table (per test — one row per iteration) ----- */
+function dataHtml(t){
+  const data = t.data||[];
+  const cols = [...new Set(data.flatMap(r=>Object.keys(r)))];
+  const head = cols.map(c=>`<th>${esc(c)} <button class="mini delcol" data-c="${esc(c)}" title="delete column">&#10005;</button></th>`).join('');
+  const body = data.map((row,ri)=>`<tr data-r="${ri}">
+      <td style="width:26px;color:var(--ink-dim)">${ri+1}</td>
+      ${cols.map(c=>`<td><input class="dcell" data-c="${esc(c)}" value="${esc(row[c]??'')}"></td>`).join('')}
+      <td class="del"><button class="mini delrow" title="delete row">&#10005;</button></td></tr>`).join('');
+  return `<div class="subhead" id="data-head">Data <span class="n">${data.length? data.length+' rows → '+data.length+' iterations':''}</span>
+      <button class="mini" id="add-dcol">+ column</button><button class="mini" id="add-drow" ${cols.length?'':'disabled'}>+ row</button>
+      <span class="cfg-hint">reference as <code>{{data.column}}</code></span></div>
+    ${cols.length?`<table class="cfg"><thead><tr><th></th>${head}<th></th></tr></thead><tbody id="data-body">${body}</tbody></table>`
+    :'<div class="cfg-hint" style="padding:4px 10px">No data table — this test runs once. Add a column to make it data-driven.</div>'}`;
+}
+
+/* ----- wire edits straight into doc ----- */
+function wireDetail(t){
+  const host = $('detail');
+
+  host.querySelectorAll('#steps-body tr').forEach(tr=>{
+    const i = +tr.dataset.i, s = t.steps[i];
+    tr.querySelector('.act').onchange = e=>{
+      const old = DATA_KEY[s.action]; if(old) delete s[old];
+      if(!HAS_SEL[e.target.value]) delete s.selector;
+      s.action = e.target.value; syncEditor(); renderDetail();
+    };
+    const tgt = tr.querySelector('.tgt'); if(tgt && !tgt.disabled) tgt.oninput = e=>{ s.selector = e.target.value; tgt.classList.toggle('var-in',hasVars(e.target.value)); syncEditor(); };
+    const dat = tr.querySelector('.dat'); if(dat && !dat.disabled) dat.oninput = e=>{
+      const k = DATA_KEY[s.action];
+      s[k] = (s.action==='wait_for' && e.target.value!=='' && !isNaN(+e.target.value)) ? +e.target.value : e.target.value;
+      dat.classList.toggle('var-in',hasVars(e.target.value)); syncEditor();
+    };
+    tr.querySelector('.rm').onclick = ()=>{ t.steps.splice(i,1); syncEditor(); renderDetail(); renderTests(); };
+    tr.querySelector('.up').onclick = ()=>{ if(i>0){ [t.steps[i-1],t.steps[i]]=[t.steps[i],t.steps[i-1]]; syncEditor(); renderDetail(); } };
+    tr.querySelector('.dn').onclick = ()=>{ if(i<t.steps.length-1){ [t.steps[i+1],t.steps[i]]=[t.steps[i],t.steps[i+1]]; syncEditor(); renderDetail(); } };
+    tr.querySelector('.vbtn').onclick = e=> showVars(e, JSON.stringify(s), t);
+  });
+  const addStep = host.querySelector('#add-step');
+  if(addStep) addStep.onclick = ()=>{ t.steps.push({action:'click', selector:''}); syncEditor(); renderDetail(); renderTests(); };
+
+  if(t.type==='api'){
+    const parse = v => { try{ return JSON.parse(v); }catch{ return v; } };
+    host.querySelector('#req-method').onchange = e=>{ t.request.method = e.target.value; syncEditor(); };
+    host.querySelector('#req-path').oninput = e=>{ t.request.path = e.target.value; syncEditor(); };
+    host.querySelector('#req-body').oninput = e=>{
+      if(e.target.value.trim()==='') delete t.request.json;
+      else t.request.json = parse(e.target.value);
+      syncEditor();
+    };
+    host.querySelectorAll('#asserts-body tr').forEach(tr=>{
+      const i = +tr.dataset.i;
+      const rebuild = ()=>{
+        const type = tr.querySelector('.atype').value;
+        const field = tr.querySelector('.afield')?.value||'';
+        const chk = tr.querySelector('.achk')?.value;
+        const exp = parse(tr.querySelector('.aexp').value);
+        t.assertions[i] =
+          type==='status'        ? {type, equals: exp} :
+          type==='json_path'     ? (chk==='exists' ? {type, path: field} : {type, path: field, [chk||'equals']: exp}) :
+          type==='header'        ? {type, name: field, contains: String(exp)} :
+          type==='body_contains' ? {type, value: String(exp)} :
+                                   {type, value: typeof exp==='number'?exp:+exp||0};
+        syncEditor();
+      };
+      tr.querySelector('.atype').onchange = ()=>{ rebuild(); renderDetail(); };
+      tr.querySelectorAll('.afield,.aexp').forEach(el=>el.oninput = rebuild);
+      const chk = tr.querySelector('.achk'); if(chk) chk.onchange = ()=>{ rebuild(); renderDetail(); };
+      tr.querySelector('.rm').onclick = ()=>{ t.assertions.splice(i,1); syncEditor(); renderDetail(); renderTests(); };
+      tr.querySelector('.vbtn').onclick = e=> showVars(e, JSON.stringify(t.assertions[i])+JSON.stringify(t.request), t);
+    });
+    const addA = host.querySelector('#add-assert');
+    if(addA) addA.onclick = ()=>{ t.assertions.push({type:'status', equals:200}); syncEditor(); renderDetail(); renderTests(); };
+  }
+
+  /* data table wiring */
+  host.querySelectorAll('.dcell').forEach(inp=>{
+    inp.oninput = e=>{
+      const ri = +inp.closest('tr').dataset.r, c = inp.dataset.c, v = e.target.value;
+      t.data[ri][c] = (v!=='' && !isNaN(+v)) ? +v : v;   // numbers stay numbers
+      syncEditor();
+    };
+  });
+  host.querySelectorAll('.delrow').forEach(b=>b.onclick = ()=>{ t.data.splice(+b.closest('tr').dataset.r,1); if(!t.data.length) delete t.data; syncEditor(); renderDetail(); renderTests(); });
+  host.querySelectorAll('.delcol').forEach(b=>b.onclick = ()=>{ t.data.forEach(r=>delete r[b.dataset.c]); syncEditor(); renderDetail(); });
+  const addCol = host.querySelector('#add-dcol');
+  if(addCol) addCol.onclick = ()=>{
+    const c = prompt('Column name (used as {{data.'+'name}}):'); if(!c) return;
+    t.data = t.data?.length ? t.data : [{}];
+    t.data.forEach(r=>{ if(!(c in r)) r[c]=''; });
+    syncEditor(); renderDetail(); renderTests();
+  };
+  const addRow = host.querySelector('#add-drow');
+  if(addRow) addRow.onclick = ()=>{
+    const cols = [...new Set(t.data.flatMap(r=>Object.keys(r)))];
+    t.data.push(Object.fromEntries(cols.map(c=>[c,''])));
+    syncEditor(); renderDetail(); renderTests();
+  };
+}
+
+/* ----- variable popup ----- */
+async function showVars(ev, text, t){
+  const names = [...new Set([...text.matchAll(VAR_RE)].map(m=>m[1]))];
+  const pop = $('varpop');
+  if(!names.length){ pop.style.display='none'; return; }
+  const env = $('env-select').value;
+  const parts = [];
+  for(const n of names){
+    if(n.startsWith('data.')){
+      const col = n.slice(5);
+      const vals = (t.data||[]).map(r=>r[col]);
+      parts.push(`<div class="vrow"><b>{{${esc(n)}}}</b> — data column · ${vals.length} iteration value(s): ${esc(vals.map(v=>JSON.stringify(v)).join(', ')||'(no rows yet)')}</div>`);
+    }else{
+      const [cat,...rest] = n.split('.'); const key = rest.join('.');
+      let row = null;
+      try{ row = (await (await fetch(`/api/config/${cat}/${env}`)).json()).find?.(r=>r.key===key); }catch{}
+      parts.push(row
+        ? `<div class="vrow"><b>{{${esc(n)}}}</b> = ${esc(row.value)} <span style="opacity:.7">· ${esc(row.description||'')}</span> <span>(${esc(env)})</span></div>`
+        : `<div class="vrow" style="color:var(--fail)"><b>{{${esc(n)}}}</b> — not defined in '${esc(env)}'</div>`);
+    }
+  }
+  pop.innerHTML = `<h4>Variables</h4>${parts.join('')}<div style="margin-top:6px"><a id="vp-cfg">edit in &#9881; configuration</a></div>`;
+  pop.style.display='block';
+  pop.style.left = Math.min(ev.clientX, innerWidth-440)+'px';
+  pop.style.top = (ev.clientY+12)+'px';
+  $('vp-cfg').onclick = ()=>{ pop.style.display='none'; $('btn-config').click(); };
+}
+document.addEventListener('click', e=>{ if(!e.target.closest('#varpop') && !e.target.closest('.vbtn')) $('varpop').style.display='none'; });
+
+/* ================= tabs ================= */
+function showTab(which){
+  $('tab-detail').classList.toggle('active', which==='detail');
+  $('tab-results').classList.toggle('active', which==='results');
+  $('detail').classList.toggle('hide', which!=='detail');
+  $('results').classList.toggle('open', which==='results');
+}
+$('tab-detail').onclick = ()=>showTab('detail');
+$('tab-results').onclick = ()=>showTab('results');
+
+/* ================= run ================= */
+let currentRunId = null;
+
+function setRunBtn(running){
+  const b = $('btn-run');
+  b.classList.toggle('stop', running);
+  b.textContent = running ? 'Stop' : 'Run suite';
+  b.disabled = false;
+}
+
+async function runTests(indices){
+  const tests = indices ? indices.map(i=>doc.tests[i]) : doc.tests;
+  const intent = {...doc, tests};
+  buildMeter(tests.reduce((n,t)=>n+(t.data?.length||1),0)); setTally('running…');
+  showTab('results');
+  $('results').innerHTML = '<div class="empty">running…</div>';
+  const body = {intent, headed: $('chk-headed').checked, env: $('env-select').value||null};
+  const {run_id} = await (await fetch('/api/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
+  currentRunId = run_id;
+  setRunBtn(true);
   poll(run_id);
+}
+$('btn-run').onclick = async ()=>{
+  if(currentRunId){                       // a run is live -> stop it
+    $('btn-run').textContent = 'Stopping…'; $('btn-run').disabled = true;
+    await fetch('/api/run/'+currentRunId+'/stop',{method:'POST'});
+    return;                               // poll() finishes up when the runner exits
+  }
+  runTests(null);
 };
 
-function buildMeter(n){
-  $('meter').innerHTML = Array.from({length:n},()=>'<i class="r"></i>').join('');
-}
+function buildMeter(n){ $('meter').innerHTML = Array.from({length:n},()=>'<i class="r"></i>').join(''); }
 function setTally(html){ $('tally').innerHTML = html; }
 
 async function poll(id){
   const run = await (await fetch('/api/run/'+id)).json();
   if(run.status==='running'){ setTimeout(()=>poll(id), 500); return; }
-  $('btn-run').disabled = false;
+  currentRunId = null; setRunBtn(false);
   if(run.status==='error'){
     setTally('<b class="bad">engine error</b>');
     $('results').innerHTML = `<div class="err">${esc(run.error)}</div>`;
@@ -250,13 +565,9 @@ async function poll(id){
   render(run.report);
 }
 
-/* ---------- render report ---------- */
-function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
-
 function render(r){
-  const segs = r.results.map(t=>`<i class="${t.passed?'p':'f'}"></i>`).join('');
-  $('meter').innerHTML = segs;
-  setTally(`<b class="ok">${r.passed} pass</b> · <b class="bad">${r.failed} fail</b>`);
+  $('meter').innerHTML = r.results.map(t=>`<i class="${t.passed?'p':'f'}"></i>`).join('');
+  setTally(`${r.stopped?'<b class="bad">stopped</b> — ':''}<b class="ok">${r.passed} pass</b> · <b class="bad">${r.failed} fail</b>`);
   $('suite-ref').textContent = r.requirement_ref || r.suite;
   $('results').innerHTML = r.results.map(t=>`
     <div class="test">
@@ -276,7 +587,7 @@ function render(r){
     </div>`).join('');
 }
 
-/* ---------- generate from requirement ---------- */
+/* ================= generate drawer ================= */
 $('btn-gen-toggle').onclick = ()=> $('gen').classList.toggle('open');
 $('btn-gen').onclick = async ()=>{
   $('btn-gen').disabled = true; $('btn-gen').textContent = 'Generating…';
@@ -285,13 +596,20 @@ $('btn-gen').onclick = async ()=>{
   const data = await res.json();
   $('btn-gen').disabled = false; $('btn-gen').textContent = 'Generate tests';
   if(data.error){ alert(data.error); return; }
-  $('editor').value = JSON.stringify(data, null, 2); validate();
+  // distribute generated tests into their pack documents (ui -> ui.json, …)
+  const byType = {};
+  (data.tests||[]).forEach(t=>{ (byType[t.type] = byType[t.type]||[]).push(t); });
+  for(const [type, ts] of Object.entries(byType)){
+    let d = await (await fetch('/api/intent/'+type+'.json')).json();
+    if(!d || d.error) d = {suite: type+'-pack', tests: []};
+    d.tests.push(...ts);
+    await fetch('/api/intent/'+type+'.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+  }
+  await loadPack();
   $('gen').classList.remove('open');
 };
 
-loadFileList();
-
-/* ---------- configuration page ---------- */
+/* ================= configuration page ================= */
 let cfgCat = 'ui';
 
 async function loadEnvs(keep){
@@ -314,7 +632,7 @@ $('btn-config').onclick = async ()=>{
 $('btn-back').onclick = ()=>{
   $('config').classList.remove('open');
   document.querySelector('main').style.display='';
-  loadEnvs(true);   // main-bar picker reflects any env changes
+  loadEnvs(true);
 };
 
 document.querySelectorAll('.cfg-rail button').forEach(b=>{
@@ -378,6 +696,7 @@ $('cfg-del-env').onclick = async ()=>{
 };
 
 loadEnvs(false);
+loadPack();
 </script>
 </body>
 </html>
