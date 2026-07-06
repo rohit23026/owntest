@@ -93,10 +93,12 @@ def save_intent(name):
 
 
 # ---------- run execution ----------
-def _execute(run_id: str, intent: dict, headed: bool, browser: str | None = None):
+def _execute(run_id: str, intent: dict, headed: bool, browser: str | None = None,
+             env: str | None = None):
     from owntest.runner import run_suite
     try:
-        report = asyncio.run(run_suite(intent, headless=not headed, browser=browser))
+        report = asyncio.run(run_suite(intent, headless=not headed, browser=browser,
+                                       env=env))
         RUNS[run_id].update(status="done", report=report)
         stamp = time.strftime("%Y%m%d-%H%M%S")
         with open(os.path.join(REPORTS_DIR, f"{stamp}-{report['suite']}.json"), "w") as f:
@@ -114,7 +116,7 @@ def start_run():
                     "total": len(intent.get("tests", []))}
     threading.Thread(target=_execute,
                      args=(run_id, intent, body.get("headed", False),
-                           body.get("browser")),
+                           body.get("browser"), body.get("env")),
                      daemon=True).start()
     return jsonify({"run_id": run_id})
 
@@ -125,6 +127,49 @@ def run_status(run_id):
     if not run:
         return jsonify({"error": "unknown run"}), 404
     return jsonify(run)
+
+
+# ---------- configuration (environments + variables) ----------
+@app.get("/api/config/environments")
+def config_envs():
+    from owntest import config_store
+    return jsonify(config_store.list_environments())
+
+
+@app.post("/api/config/environments")
+def config_env_add():
+    from owntest import config_store
+    try:
+        config_store.add_environment(request.get_json(force=True)["name"])
+        return jsonify(config_store.list_environments())
+    except (ValueError, KeyError) as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@app.delete("/api/config/environments/<name>")
+def config_env_delete(name):
+    from owntest import config_store
+    config_store.delete_environment(name)
+    return jsonify(config_store.list_environments())
+
+
+@app.get("/api/config/<category>/<env>")
+def config_rows(category, env):
+    from owntest import config_store
+    try:
+        return jsonify(config_store.get_rows(category, env))
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@app.post("/api/config/<category>/<env>")
+def config_rows_save(category, env):
+    from owntest import config_store
+    try:
+        config_store.save_rows(category, env, request.get_json(force=True)["rows"])
+        return jsonify(config_store.get_rows(category, env))
+    except (ValueError, KeyError) as e:
+        return jsonify({"error": str(e)}), 400
 
 
 # ---------- LLM generation ----------

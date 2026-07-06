@@ -1,6 +1,6 @@
 """A tiny fake 'orders' API to run OwnTest against. python3 tests/demo_server.py"""
 import json
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 ORDERS = {}
 NEXT_ID = [1]
@@ -51,4 +51,5 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     print("demo API on http://127.0.0.1:8077")
-    HTTPServer(("127.0.0.1", 8077), Handler).serve_forever()
+    # Threading: an idle client connection must not block every other request
+    ThreadingHTTPServer(("127.0.0.1", 8077), Handler).serve_forever()

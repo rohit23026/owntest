@@ -38,6 +38,7 @@ python3 tests/demo_server.py &
 python3 -m owntest.runner examples/orders_api_intent.json
 python3 -m owntest.runner my_intent.json --headed        # watch UI tests run
 python3 -m owntest.runner my_intent.json --browser edge  # chrome|edge|brave|chromium
+python3 -m owntest.runner my_intent.json --env staging   # resolves {{category.key}} variables
 python3 -m owntest.runner my_intent.json --api-base-url http://host:port
 
 # The app (Flask server + static UI)
@@ -74,6 +75,7 @@ owntest/
   ui/page.py       goto/click/type/waits/asserts/screenshots + page_map() for the LLM
   api/engine.py    HTTP client + assertions (status, json_path, header, body, latency)
   llm/provider.py  LLMProvider ABC + Anthropic/OpenAI adapters + generate_test_intent()
+  config_store.py  environments + variables (SQLite in the user data dir)
   runner.py        suite orchestration, JSON report, CI exit codes
 app/server.py      Flask app powering both the browser UI and the desktop window
 app/desktop.py     entry point that starts server.py and opens a native WebView2 window
@@ -85,6 +87,12 @@ app/desktop.py     entry point that starts server.py and opens a native WebView2
 is `type: "api"` (a `request` + `assertions`) or `type: "ui"` (a list of `steps`). The LLM
 system prompt, the runner's action/assertion dispatch, and any UI editor must all agree on
 this schema if it changes.
+
+Any string field may reference environment variables as `{{category.key}}` (e.g.
+`{{api.base_url}}`, categories: ui/api/kafka/db). [owntest/config_store.py](owntest/config_store.py)
+stores them in SQLite (`config.db` in the user data dir, edited via the app's ⚙ page)
+and `run_suite(env=...)` resolves them before execution — failing loud on undefined
+variables or a missing environment, never running with a literal placeholder.
 
 **CDP layer is the actual browser automation engine**, not a wrapper around one:
 - [owntest/cdp/client.py](owntest/cdp/client.py) — one WebSocket per tab, request/response

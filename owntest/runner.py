@@ -121,7 +121,10 @@ async def run_ui_test(test: dict, page) -> TestResult:
 
 # ---------------- Suite orchestration ----------------
 async def run_suite(intent: dict, api_base_url: str = "",
-                    headless: bool = True, browser: str | None = None) -> dict:
+                    headless: bool = True, browser: str | None = None,
+                    env: str | None = None) -> dict:
+    from .config_store import substitute
+    intent = substitute(intent, env)   # resolve {{category.key}} placeholders
     api_engine = HttpEngine(base_url=api_base_url or intent.get("api_base_url", ""))
     results: list[TestResult] = []
 
@@ -165,13 +168,16 @@ def main():
     p.add_argument("--headed", action="store_true")
     p.add_argument("--browser", default=None,
                    help="chrome|edge|brave|chromium (default: $OWNTEST_BROWSER or chrome)")
+    p.add_argument("--env", default=None,
+                   help="environment whose variables resolve {{category.key}} placeholders")
     args = p.parse_args()
 
     with open(args.intent_file) as f:
         intent = json.load(f)
 
     report = asyncio.run(run_suite(intent, args.api_base_url,
-                                   headless=not args.headed, browser=args.browser))
+                                   headless=not args.headed, browser=args.browser,
+                                   env=args.env))
     print(json.dumps(report, indent=2))
     raise SystemExit(0 if report["failed"] == 0 else 1)
 

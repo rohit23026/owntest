@@ -35,6 +35,32 @@ button.primary:disabled{opacity:.5;cursor:default}
 .headed{display:flex;align-items:center;gap:6px;color:var(--ink-dim);white-space:nowrap;cursor:pointer;user-select:none}
 .headed input{accent-color:var(--amber);cursor:pointer}
 .headed:hover{color:var(--ink)}
+header select{background:var(--panel-2);color:var(--ink);border:1px solid var(--line);font-family:var(--mono);font-size:13px;padding:7px 8px;border-radius:4px}
+#btn-config{padding:8px 12px;font-size:15px;line-height:1}
+
+/* ---------- configuration page ---------- */
+#config{flex:1;display:none;grid-template-columns:180px 1fr;min-height:0}
+#config.open{display:grid}
+.cfg-rail{border-right:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;padding:14px 0}
+.cfg-rail button{background:none;border:0;border-left:3px solid transparent;border-radius:0;text-align:left;padding:10px 18px;color:var(--ink-dim);letter-spacing:.12em;text-transform:uppercase;font-size:11px}
+.cfg-rail button:hover{color:var(--ink)}
+.cfg-rail button.active{color:var(--amber);border-left-color:var(--amber);background:var(--panel-2)}
+.cfg-main{display:flex;flex-direction:column;min-height:0}
+.cfg-bar{display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:1px solid var(--line)}
+.cfg-bar input{background:var(--panel);border:1px solid var(--line);color:var(--ink);font-family:var(--mono);padding:6px 10px;border-radius:4px;width:150px}
+.cfg-body{flex:1;overflow-y:auto;padding:16px 20px}
+table.cfg{width:100%;border-collapse:collapse}
+table.cfg th{text-align:left;color:var(--ink-dim);font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:6px 10px;border-bottom:1px solid var(--line)}
+table.cfg td{padding:4px 6px;border-bottom:1px solid var(--line)}
+table.cfg td input{width:100%;background:var(--panel);border:1px solid transparent;color:var(--ink);font-family:var(--mono);font-size:12.5px;padding:7px 8px;border-radius:4px}
+table.cfg td input:hover{border-color:var(--line)}
+table.cfg td input:focus{outline:none;border-color:var(--amber-dim);background:#1d222b}
+table.cfg td.del{width:34px;text-align:center}
+table.cfg td.del button{padding:4px 8px;color:var(--ink-dim);border:0;background:none}
+table.cfg td.del button:hover{color:var(--fail)}
+.cfg-foot{display:flex;gap:10px;align-items:center;padding:12px 20px;border-top:1px solid var(--line)}
+.cfg-hint{color:var(--ink-dim);font-size:11px}
+.cfg-hint code{color:var(--amber)}
 
 /* ---------- layout ---------- */
 main{flex:1;display:grid;grid-template-columns:minmax(360px,44%) 1fr;min-height:0}
@@ -92,8 +118,43 @@ section+section{border-left:1px solid var(--line)}
   <label class="headed" title="Open a visible browser window for UI tests instead of headless">
     <input type="checkbox" id="chk-headed"> show browser
   </label>
+  <select id="env-select" title="Environment whose variables resolve {{category.key}} placeholders" aria-label="environment"></select>
   <button class="primary" id="btn-run">Run suite</button>
+  <button id="btn-config" title="Configuration" aria-label="configuration">&#9881;</button>
 </header>
+
+<div id="config">
+  <nav class="cfg-rail" aria-label="configuration areas">
+    <button data-cat="ui" class="active">UI</button>
+    <button data-cat="api">API</button>
+    <button data-cat="kafka">Kafka</button>
+    <button data-cat="db">DB</button>
+  </nav>
+  <div class="cfg-main">
+    <div class="cfg-bar">
+      Environment
+      <select id="cfg-env" aria-label="environment to edit"></select>
+      <input id="cfg-new-env" placeholder="new environment…">
+      <button id="cfg-add-env">Add</button>
+      <button id="cfg-del-env">Delete env</button>
+      <span class="spacer" style="flex:1"></span>
+      <button id="btn-back">&#8592; Back</button>
+    </div>
+    <div class="cfg-body">
+      <table class="cfg">
+        <thead><tr><th style="width:26%">Variable</th><th style="width:44%">Value</th><th>Description</th><th></th></tr></thead>
+        <tbody id="cfg-rows"></tbody>
+      </table>
+    </div>
+    <div class="cfg-foot">
+      <button id="cfg-add-row">+ Add row</button>
+      <button class="primary" id="cfg-save">Save</button>
+      <span id="cfg-state" class="cfg-hint"></span>
+      <span class="spacer" style="flex:1"></span>
+      <span class="cfg-hint">use in scripts as <code id="cfg-example">{{ui.name}}</code></span>
+    </div>
+  </div>
+</div>
 
 <main>
   <section>
@@ -167,7 +228,8 @@ $('btn-run').onclick = async ()=>{
   buildMeter(n); setTally('running…');
   $('btn-run').disabled = true;
   const headed = $('chk-headed').checked;
-  const {run_id} = await (await fetch('/api/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({intent, headed})})).json();
+  const env = $('env-select').value || null;
+  const {run_id} = await (await fetch('/api/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({intent, headed, env})})).json();
   poll(run_id);
 };
 
@@ -228,6 +290,94 @@ $('btn-gen').onclick = async ()=>{
 };
 
 loadFileList();
+
+/* ---------- configuration page ---------- */
+let cfgCat = 'ui';
+
+async function loadEnvs(keep){
+  const envs = await (await fetch('/api/config/environments')).json();
+  const opts = envs.map(e=>`<option>${esc(e)}</option>`).join('');
+  for(const id of ['env-select','cfg-env']){
+    const sel = $(id), prev = keep ? sel.value : null;
+    sel.innerHTML = opts;
+    if(prev && envs.includes(prev)) sel.value = prev;
+  }
+  return envs;
+}
+
+$('btn-config').onclick = async ()=>{
+  await loadEnvs(true);
+  await loadCfgRows();
+  document.querySelector('main').style.display='none';
+  $('config').classList.add('open');
+};
+$('btn-back').onclick = ()=>{
+  $('config').classList.remove('open');
+  document.querySelector('main').style.display='';
+  loadEnvs(true);   // main-bar picker reflects any env changes
+};
+
+document.querySelectorAll('.cfg-rail button').forEach(b=>{
+  b.onclick = async ()=>{
+    document.querySelectorAll('.cfg-rail button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    cfgCat = b.dataset.cat;
+    $('cfg-example').textContent = `{{${cfgCat}.name}}`;
+    await loadCfgRows();
+  };
+});
+$('cfg-env').onchange = loadCfgRows;
+
+async function loadCfgRows(){
+  const rows = await (await fetch(`/api/config/${cfgCat}/${$('cfg-env').value}`)).json();
+  $('cfg-rows').innerHTML = '';
+  (rows.length ? rows : [{key:'',value:'',description:''}]).forEach(addCfgRow);
+  $('cfg-state').textContent = '';
+}
+function addCfgRow(r={key:'',value:'',description:''}){
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input class="k" placeholder="base_url" value="${esc(r.key)}"></td>
+    <td><input class="v" placeholder="https://…" value="${esc(r.value)}"></td>
+    <td><input class="d" placeholder="what is this?" value="${esc(r.description)}"></td>
+    <td class="del"><button title="delete row">&#10005;</button></td>`;
+  tr.querySelector('.del button').onclick = ()=> tr.remove();
+  $('cfg-rows').appendChild(tr);
+}
+$('cfg-add-row').onclick = ()=> addCfgRow();
+
+$('cfg-save').onclick = async ()=>{
+  const rows = [...$('cfg-rows').querySelectorAll('tr')].map(tr=>({
+    key: tr.querySelector('.k').value.trim(),
+    value: tr.querySelector('.v').value,
+    description: tr.querySelector('.d').value,
+  })).filter(r=>r.key);
+  const res = await fetch(`/api/config/${cfgCat}/${$('cfg-env').value}`,
+    {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rows})});
+  const data = await res.json();
+  $('cfg-state').textContent = data.error ? 'error: '+data.error
+    : `saved ${rows.length} variable(s) ${new Date().toLocaleTimeString()}`;
+};
+
+$('cfg-add-env').onclick = async ()=>{
+  const name = $('cfg-new-env').value.trim();
+  if(!name) return;
+  const res = await fetch('/api/config/environments',
+    {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})});
+  const data = await res.json();
+  if(data.error){ $('cfg-state').textContent = 'error: '+data.error; return; }
+  $('cfg-new-env').value='';
+  await loadEnvs(true); $('cfg-env').value = name; await loadCfgRows();
+};
+
+$('cfg-del-env').onclick = async ()=>{
+  const name = $('cfg-env').value;
+  if(!confirm(`Delete environment "${name}" and all its variables?`)) return;
+  await fetch('/api/config/environments/'+name,{method:'DELETE'});
+  await loadEnvs(false); await loadCfgRows();
+};
+
+loadEnvs(false);
 </script>
 </body>
 </html>

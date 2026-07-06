@@ -56,6 +56,19 @@ python3 -m owntest.runner my_intent.json --browser edge  # chrome|edge|brave|chr
 Pick the browser with `--browser`, `OWNTEST_BROWSER`, or a `"browser"` field in the
 intent. If the binary isn't auto-detected: `export OWNTEST_CHROME=/path/to/exe`
 
+## Environments & variables
+Store URLs and other values once, reference them in any script as `{{category.key}}`:
+```json
+{"api_base_url": "{{api.base_url}}", ...}
+{"action": "goto", "url": "{{ui.home}}/login"}
+```
+Manage them in the app's ⚙ configuration page — pick an area on the left (UI / API /
+Kafka / DB), edit the variable table on the right, one table per named environment
+(default, staging, prod, …). Runs pick the environment from the dropdown next to
+**Run suite** (app) or `--env staging` (CLI). Undefined variables fail the run loudly —
+you can't accidentally hit the wrong host with a half-resolved script. Stored in SQLite
+at `%APPDATA%\OwnTest\config.db` (or `~/.owntest/`).
+
 ## Generate tests with an LLM
 ```python
 from owntest.llm.provider import generate_test_intent, get_provider
