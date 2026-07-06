@@ -65,7 +65,9 @@ Store URLs and other values once, reference them in any script as `{{category.ke
 Manage them in the app's ⚙ configuration page — pick an area on the left (UI / API /
 Kafka / DB), edit the variable table on the right, one table per named environment
 (default, staging, prod, …). Runs pick the environment from the dropdown next to
-**Run suite** (app) or `--env staging` (CLI). Undefined variables fail the run loudly —
+**Run suite** (app) or `--env staging` (CLI). For UI tests, pick a **Base URL** key
+(from the ui category) next to the pack selector — `goto` steps then use relative
+paths and the environment decides the host. Undefined variables fail the run loudly —
 you can't accidentally hit the wrong host with a half-resolved script. Stored in SQLite
 at `%APPDATA%\OwnTest\config.db` (or `~/.owntest/`).
 

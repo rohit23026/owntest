@@ -94,6 +94,15 @@ stores them in SQLite (`config.db` in the user data dir, edited via the app's �
 and `run_suite(env=...)` resolves them before execution — failing loud on undefined
 variables or a missing environment, never running with a literal placeholder.
 
+A suite may set `"ui_base_url"` (the app's UI pack stores `{{ui.<key>}}`, picked via
+the Base URL dropdown next to the pack selector — auto-set to the first ui-category
+key). The runner navigates there before each UI test, so app-authored steps only
+interact; the app's action dropdown has no `goto` and opening a test migrates goto
+steps out (dropping data columns nothing else references). `goto` remains valid in
+the schema for CLI/LLM-authored intents — relative paths are prefixed with the base,
+absolute URLs pass through, and without a base a UI test needs at least one goto or
+fails with a clear error. This is the UI twin of `api_base_url`.
+
 Data-driven testing: a test may carry a `"data"` list of row objects; the runner
 (`_expand_data`) runs the test once per row, resolving `{{data.column}}` placeholders
 (a string that is exactly one placeholder keeps the row value's type, so numbers

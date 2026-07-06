@@ -100,6 +100,17 @@ tr.trow{cursor:pointer}
 #gen .row{display:flex;gap:8px;align-items:center}
 #gen input{background:var(--panel);border:1px solid var(--line);color:var(--ink);font-family:var(--mono);padding:6px 10px;border-radius:4px;flex:1}
 
+/* modal (name entry) */
+#modal{position:fixed;inset:0;z-index:60;background:#0008;display:none;align-items:center;justify-content:center}
+#modal.open{display:flex}
+#modal .box{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:20px 22px;min-width:340px;box-shadow:0 12px 40px #000b}
+#modal h3{font-family:var(--disp);font-size:14px;margin-bottom:4px}
+#modal .hint{color:var(--ink-dim);font-size:11px;margin-bottom:12px}
+#modal input{width:100%;background:var(--panel);border:1px solid var(--line);color:var(--ink);font-family:var(--mono);font-size:13px;padding:9px 10px;border-radius:4px}
+#modal input:focus{outline:none;border-color:var(--amber-dim)}
+#modal .mrow{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+#modal .merr{color:var(--fail);font-size:11px;min-height:14px;margin-top:6px}
+
 /* variable popup */
 #varpop{position:fixed;z-index:50;background:var(--panel-2);border:1px solid var(--amber-dim);border-radius:6px;padding:12px 14px;max-width:420px;display:none;box-shadow:0 8px 30px #0009}
 #varpop h4{color:var(--amber);font-size:12px;margin-bottom:6px}
@@ -189,6 +200,9 @@ tr.trow{cursor:pointer}
         <option value="ui">UI</option><option value="api">API</option>
         <option value="kafka">Kafka</option><option value="db">DB</option>
       </select>
+      <span id="ui-base-wrap" style="display:none">Base URL
+        <select id="ui-base" title="ui-category variable used as the base for relative goto paths"></select>
+      </span>
       <span class="spacer"></span>
       <button class="mini" id="btn-json" title="toggle raw JSON view">{&hairsp;}</button>
     </div>
@@ -230,12 +244,55 @@ tr.trow{cursor:pointer}
 
 <div id="varpop"></div>
 
+<div id="modal" role="dialog" aria-modal="true">
+  <div class="box">
+    <h3 id="modal-title">Name</h3>
+    <div class="hint" id="modal-hint"></div>
+    <input id="modal-input" spellcheck="false">
+    <div class="merr" id="modal-err"></div>
+    <div class="mrow">
+      <button id="modal-cancel">Cancel</button>
+      <button class="primary" id="modal-ok">Add</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const VAR_RE = /\{\{\s*([A-Za-z0-9_.-]+)\s*\}\}/g;
 
 let doc = null, currentFile = null, selIdx = -1;
+
+/* ---------- name-entry modal (prompt() doesn't exist in the WebView2 window) ---------- */
+let modalCb = null;
+function askName({title, hint, placeholder, validate}){
+  return new Promise(resolve=>{
+    $('modal-title').textContent = title;
+    $('modal-hint').textContent = hint || '';
+    $('modal-err').textContent = '';
+    const inp = $('modal-input');
+    inp.value = ''; inp.placeholder = placeholder || '';
+    $('modal').classList.add('open');
+    inp.focus();
+    modalCb = ok=>{
+      if(ok){
+        const v = inp.value.trim();
+        const err = validate ? validate(v) : (v ? null : 'name required');
+        if(err){ $('modal-err').textContent = err; return; }   // stay open
+        $('modal').classList.remove('open'); modalCb = null; resolve(v);
+      }else{
+        $('modal').classList.remove('open'); modalCb = null; resolve(null);
+      }
+    };
+  });
+}
+$('modal-ok').onclick = ()=> modalCb && modalCb(true);
+$('modal-cancel').onclick = ()=> modalCb && modalCb(false);
+$('modal-input').addEventListener('keydown', e=>{
+  if(e.key==='Enter') modalCb && modalCb(true);
+  if(e.key==='Escape') modalCb && modalCb(false);
+});
 
 /* ================= pack documents =================
    One document per pack (ui.json / api.json / …) — users never pick files;
@@ -246,9 +303,37 @@ async function loadPack(){
   const d = await (await fetch('/api/intent/'+currentFile)).json();
   doc = (d && !d.error) ? d : {suite: pack+'-pack', tests: []};
   selIdx = -1;
-  syncEditor(); renderTests(); renderDetail();
+  syncEditor(); renderTests(); renderDetail(); updateUiBase();
 }
 $('pack-select').onchange = loadPack;
+
+/* ---------- common base URL for the UI pack ----------
+   Lists the keys of the ⚙ ui category (selected environment); picking one
+   stores ui_base_url = {{ui.key}} so relative goto paths resolve against it. */
+async function updateUiBase(){
+  const wrap = $('ui-base-wrap');
+  if($('pack-select').value !== 'ui'){ wrap.style.display='none'; return; }
+  wrap.style.display='';
+  const env = $('env-select').value || 'default';
+  let rows = [];
+  try{ rows = await (await fetch('/api/config/ui/'+env)).json(); }catch{}
+  if(rows.error) rows = [];
+  let bound = (doc?.ui_base_url||'').match(/^\{\{\s*ui\.([A-Za-z0-9_.-]+)\s*\}\}$/)?.[1];
+  if(!bound && rows.length){            // tests need a start page — default to the first key
+    bound = rows[0].key;
+    doc.ui_base_url = `{{ui.${bound}}}`;
+    syncEditor();
+  }
+  $('ui-base').innerHTML = rows.length
+    ? rows.map(r=>`<option value="${esc(r.key)}" ${r.key===bound?'selected':''} title="${esc(r.value)}">${esc(r.key)}</option>`).join('')
+    : `<option value="" disabled selected>add a ui variable in ⚙</option>`;
+}
+$('ui-base').onchange = e=>{
+  if(e.target.value) doc.ui_base_url = `{{ui.${e.target.value}}}`;
+  else delete doc.ui_base_url;
+  syncEditor();
+};
+$('env-select').onchange = updateUiBase;
 
 $('btn-save').onclick = async ()=>{
   await fetch('/api/intent/'+currentFile,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(doc)});
@@ -296,21 +381,28 @@ function renderTests(){
     };
   });
 }
-$('btn-new-test').onclick = ()=>{
+$('btn-new-test').onclick = async ()=>{
   const pack = $('pack-select').value;
   if(pack!=='ui'&&pack!=='api') return;
-  const id = prompt('Test id (e.g. '+(pack==='ui'?'ui-login':'api-create-order')+'):');
+  const id = await askName({
+    title: 'New '+pack.toUpperCase()+' test',
+    hint: 'A unique id for the test case',
+    placeholder: pack==='ui'?'ui-login':'api-create-order',
+    validate: v=>!v ? 'id required'
+      : (doc.tests||[]).some(t=>t.id===v) ? 'a test with this id already exists' : null});
   if(!id) return;
   doc.tests = doc.tests||[];
   doc.tests.push(pack==='ui'
-    ? {id, type:'ui', steps:[{action:'goto', url:''}]}
+    ? {id, type:'ui', steps:[{action:'wait_for', selector:'body'}]}
     : {id, type:'api', request:{method:'GET', path:'/'}, assertions:[{type:'status', equals:200}]});
   selIdx = doc.tests.length-1;
   syncEditor(); renderTests(); renderDetail();
 }
 
 /* ================= detail (right) ================= */
-const STEP_ACTIONS = ['goto','click','type','wait_for','assert_text','assert_url','screenshot'];
+/* goto is not offered: navigation comes from the configured Base URL
+   (the engine still honors goto in CLI/LLM-authored intents) */
+const STEP_ACTIONS = ['click','type','wait_for','assert_text','assert_url','screenshot'];
 const DATA_KEY = {goto:'url', type:'text', wait_for:'timeout', assert_text:'contains', assert_url:'contains', screenshot:'path'};
 const HAS_SEL  = {click:1, type:1, wait_for:1, assert_text:1};
 const A_TYPES  = ['status','json_path','header','body_contains','max_ms'];
@@ -332,6 +424,19 @@ function renderDetail(){
    to that column's header name. */
 function migrateStepData(t){
   let changed = false;
+  // navigation now comes from the Base URL — goto steps migrate out entirely,
+  // along with data columns no other step references
+  const gotos = (t.steps||[]).filter(s=>s.action==='goto');
+  if(gotos.length){
+    t.steps = t.steps.filter(s=>s.action!=='goto');
+    for(const g of gotos){
+      const col = (typeof g.url==='string' && (g.url.match(BOUND_RE)||[])[1]);
+      if(col && !t.steps.some(s=>{ const dk=DATA_KEY[s.action]; return dk && s[dk]===`{{data.${col}}}`; }))
+        (t.data||[]).forEach(r=>delete r[col]);
+    }
+    if(t.data && !dataCols(t).length) delete t.data;
+    changed = true;
+  }
   for(const s of (t.steps||[])){
     const dk = DATA_KEY[s.action];
     if(!dk) continue;
@@ -438,8 +543,9 @@ function dataHtml(t){
       ${cols.map(c=>`<td><input class="dcell" data-c="${esc(c)}" value="${esc(row[c]??'')}"></td>`).join('')}
       <td class="del"><button class="mini delrow" title="delete row">&#10005;</button></td></tr>`).join('');
   return `<div class="subhead" id="data-head">Data <span class="n">${data.length? data.length+' rows → '+data.length+' iterations':''}</span>
-      <button class="mini" id="add-dcol">+ column</button><button class="mini" id="add-drow" ${cols.length?'':'disabled'}>+ row</button>
-      <span class="cfg-hint">reference as <code>{{data.column}}</code></span></div>
+      <button id="add-dcol" style="padding:5px 12px">+ Add column</button>
+      <button id="add-drow" style="padding:5px 12px" ${cols.length?'':'disabled'}>+ Add row</button>
+      <span class="cfg-hint">columns appear in each step's Data dropdown</span></div>
     ${cols.length?`<table class="cfg"><thead><tr><th></th>${head}<th></th></tr></thead><tbody id="data-body">${body}</tbody></table>`
     :'<div class="cfg-hint" style="padding:4px 10px">No data table — this test runs once. Add a column to make it data-driven.</div>'}`;
 }
@@ -515,8 +621,15 @@ function wireDetail(t){
   host.querySelectorAll('.delrow').forEach(b=>b.onclick = ()=>{ t.data.splice(+b.closest('tr').dataset.r,1); if(!t.data.length) delete t.data; syncEditor(); renderDetail(); renderTests(); });
   host.querySelectorAll('.delcol').forEach(b=>b.onclick = ()=>{ t.data.forEach(r=>delete r[b.dataset.c]); syncEditor(); renderDetail(); });
   const addCol = host.querySelector('#add-dcol');
-  if(addCol) addCol.onclick = ()=>{
-    const c = prompt('Column name (used as {{data.'+'name}}):'); if(!c) return;
+  if(addCol) addCol.onclick = async ()=>{
+    const c = await askName({
+      title: 'New data column',
+      hint: 'Header name — every step’s Data dropdown will offer it',
+      placeholder: 'email',
+      validate: v=>!v ? 'column name required'
+        : !/^[A-Za-z0-9_-]+$/.test(v) ? 'letters, digits, _ and - only'
+        : dataCols(t).includes(v) ? 'column already exists' : null});
+    if(!c) return;
     t.data = t.data?.length ? t.data : [{}];
     t.data.forEach(r=>{ if(!(c in r)) r[c]=''; });
     syncEditor(); renderDetail(); renderTests();

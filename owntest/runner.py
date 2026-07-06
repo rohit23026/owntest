@@ -77,7 +77,7 @@ def run_api_test(test: dict, engine: HttpEngine) -> TestResult:
 
 
 # ---------------- UI execution ----------------
-async def run_ui_test(test: dict, page) -> TestResult:
+async def run_ui_test(test: dict, page, base_url: str = "") -> TestResult:
     from .ui.page import ElementNotFound  # noqa
     start = time.perf_counter()
     checks = []
@@ -85,7 +85,11 @@ async def run_ui_test(test: dict, page) -> TestResult:
         for step in test["steps"]:
             act = step["action"]
             if act == "goto":
-                await page.goto(step["url"])
+                url = step["url"]
+                # suite-level ui_base_url makes relative paths work ("/login")
+                if base_url and not url.startswith("http"):
+                    url = base_url.rstrip("/") + ("/" + url.lstrip("/") if url else "")
+                await page.goto(url)
             elif act == "click":
                 await page.click(step["selector"])
             elif act == "type":
@@ -172,10 +176,21 @@ async def run_suite(intent: dict, api_base_url: str = "",
         try:
             client = await b.new_page_client()
             page = Page(client)
+            ui_base = intent.get("ui_base_url", "")
             for t in ui_tests:
                 if _stop():
                     break
-                results.append(await run_ui_test(t, page))
+                # tests start at the configured base URL — steps only interact.
+                # (explicit goto steps still work for legacy/CLI-authored intents)
+                if ui_base:
+                    await page.goto(ui_base)
+                elif not any(s.get("action") == "goto" for s in t.get("steps", [])):
+                    results.append(TestResult(
+                        t.get("id", "?"), "ui", False, 0.0,
+                        error="no ui_base_url configured — pick a Base URL next to "
+                              "the pack selector (or set ui_base_url in the intent)"))
+                    continue
+                results.append(await run_ui_test(t, page, ui_base))
             await client.close()
         finally:
             await b.stop()
