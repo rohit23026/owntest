@@ -121,7 +121,7 @@ async def run_ui_test(test: dict, page) -> TestResult:
 
 # ---------------- Suite orchestration ----------------
 async def run_suite(intent: dict, api_base_url: str = "",
-                    headless: bool = True) -> dict:
+                    headless: bool = True, browser: str | None = None) -> dict:
     api_engine = HttpEngine(base_url=api_base_url or intent.get("api_base_url", ""))
     results: list[TestResult] = []
 
@@ -134,15 +134,17 @@ async def run_suite(intent: dict, api_base_url: str = "",
     if ui_tests:
         from .cdp.browser import Browser
         from .ui.page import Page
-        browser = await Browser(headless=headless).start()
+        # explicit arg wins, else the suite may name a browser, else default
+        chosen = browser or intent.get("browser")
+        b = await Browser(headless=headless, browser=chosen).start()
         try:
-            client = await browser.new_page_client()
+            client = await b.new_page_client()
             page = Page(client)
             for t in ui_tests:
                 results.append(await run_ui_test(t, page))
             await client.close()
         finally:
-            await browser.stop()
+            await b.stop()
 
     passed = sum(1 for r in results if r.passed)
     return {
@@ -161,12 +163,15 @@ def main():
     p.add_argument("intent_file", help="path to test-intent JSON")
     p.add_argument("--api-base-url", default="")
     p.add_argument("--headed", action="store_true")
+    p.add_argument("--browser", default=None,
+                   help="chrome|edge|brave|chromium (default: $OWNTEST_BROWSER or chrome)")
     args = p.parse_args()
 
     with open(args.intent_file) as f:
         intent = json.load(f)
 
-    report = asyncio.run(run_suite(intent, args.api_base_url, headless=not args.headed))
+    report = asyncio.run(run_suite(intent, args.api_base_url,
+                                   headless=not args.headed, browser=args.browser))
     print(json.dumps(report, indent=2))
     raise SystemExit(0 if report["failed"] == 0 else 1)
 

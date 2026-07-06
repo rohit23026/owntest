@@ -37,6 +37,7 @@ python3 tests/demo_server.py &
 # run a suite (API tests need no browser; UI tests need local Chrome)
 python3 -m owntest.runner examples/orders_api_intent.json
 python3 -m owntest.runner my_intent.json --headed        # watch UI tests run
+python3 -m owntest.runner my_intent.json --browser edge  # chrome|edge|brave|chromium
 python3 -m owntest.runner my_intent.json --api-base-url http://host:port
 
 # The app (Flask server + static UI)
@@ -48,7 +49,10 @@ Exit code from `owntest.runner` is 0 iff every test passed — this is what CI d
 
 There is currently no automated test suite (no pytest/unittest files) and no lint config
 in the repo. [tests/demo_server.py](tests/demo_server.py) is a fixture (a fake orders API), not a test file.
-If Chrome isn't auto-detected for UI tests, set `OWNTEST_CHROME=/path/to/chrome`.
+UI tests default to Chrome; pick another Chromium browser with `--browser`
+(`chrome|edge|brave|chromium`), the `OWNTEST_BROWSER` env var, or a `"browser"`
+field in the intent. If the binary isn't auto-detected, pin it with
+`OWNTEST_CHROME=/path/to/exe`. The registry lives in [owntest/cdp/browser.py](owntest/cdp/browser.py).
 LLM generation needs `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` in the environment.
 
 ### Building the Windows installer
@@ -120,7 +124,8 @@ from the bundled `examples/`. Runs execute in a background thread and are polled
 
 ## Known gaps (relevant when extending the UI engine)
 
-- Chromium-only (CDP) — no Firefox/WebKit.
+- Chromium-only engine (CDP) — Chrome/Edge/Brave/Chromium are selectable, but
+  no Firefox/WebKit yet (would need a non-CDP engine behind the same `Page` seam).
 - No iframe/shadow-DOM traversal, no file-upload/drag-drop, single tab only.
 - Auto-wait (`Page.wait_for`) is 100ms polling, not MutationObserver-based.
 - No test isolation / setup-teardown hooks in the intent schema yet — a real bug was hit

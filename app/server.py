@@ -93,10 +93,10 @@ def save_intent(name):
 
 
 # ---------- run execution ----------
-def _execute(run_id: str, intent: dict, headed: bool):
+def _execute(run_id: str, intent: dict, headed: bool, browser: str | None = None):
     from owntest.runner import run_suite
     try:
-        report = asyncio.run(run_suite(intent, headless=not headed))
+        report = asyncio.run(run_suite(intent, headless=not headed, browser=browser))
         RUNS[run_id].update(status="done", report=report)
         stamp = time.strftime("%Y%m%d-%H%M%S")
         with open(os.path.join(REPORTS_DIR, f"{stamp}-{report['suite']}.json"), "w") as f:
@@ -113,7 +113,8 @@ def start_run():
     RUNS[run_id] = {"status": "running", "started": time.time(),
                     "total": len(intent.get("tests", []))}
     threading.Thread(target=_execute,
-                     args=(run_id, intent, body.get("headed", False)),
+                     args=(run_id, intent, body.get("headed", False),
+                           body.get("browser")),
                      daemon=True).start()
     return jsonify({"run_id": run_id})
 

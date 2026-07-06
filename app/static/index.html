@@ -32,6 +32,9 @@ button:hover{border-color:var(--amber-dim)}
 button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 button.primary{background:var(--amber);border-color:var(--amber);color:#181205;font-weight:600}
 button.primary:disabled{opacity:.5;cursor:default}
+.headed{display:flex;align-items:center;gap:6px;color:var(--ink-dim);white-space:nowrap;cursor:pointer;user-select:none}
+.headed input{accent-color:var(--amber);cursor:pointer}
+.headed:hover{color:var(--ink)}
 
 /* ---------- layout ---------- */
 main{flex:1;display:grid;grid-template-columns:minmax(360px,44%) 1fr;min-height:0}
@@ -86,6 +89,9 @@ section+section{border-left:1px solid var(--line)}
   <div class="meter" id="meter" aria-label="run progress"></div>
   <div class="tally" id="tally">idle</div>
   <button id="btn-gen-toggle">Generate from requirement</button>
+  <label class="headed" title="Open a visible browser window for UI tests instead of headless">
+    <input type="checkbox" id="chk-headed"> show browser
+  </label>
   <button class="primary" id="btn-run">Run suite</button>
 </header>
 
@@ -160,7 +166,8 @@ $('btn-run').onclick = async ()=>{
   const n = (intent.tests||[]).length;
   buildMeter(n); setTally('running…');
   $('btn-run').disabled = true;
-  const {run_id} = await (await fetch('/api/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({intent})})).json();
+  const headed = $('chk-headed').checked;
+  const {run_id} = await (await fetch('/api/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({intent, headed})})).json();
   poll(run_id);
 };
 

@@ -49,10 +49,12 @@ Add a UI test to an intent file:
 ]}
 ```
 ```bash
-python3 -m owntest.runner my_intent.json            # headless
-python3 -m owntest.runner my_intent.json --headed   # watch it run
+python3 -m owntest.runner my_intent.json                 # headless (Chrome)
+python3 -m owntest.runner my_intent.json --headed        # watch it run
+python3 -m owntest.runner my_intent.json --browser edge  # chrome|edge|brave|chromium
 ```
-If Chrome isn't auto-detected: `export OWNTEST_CHROME=/path/to/chrome`
+Pick the browser with `--browser`, `OWNTEST_BROWSER`, or a `"browser"` field in the
+intent. If the binary isn't auto-detected: `export OWNTEST_CHROME=/path/to/exe`
 
 ## Generate tests with an LLM
 ```python
@@ -81,7 +83,8 @@ inventing endpoints/selectors, and output is schema-validated before execution.
    registry assertions — separate engine, same Test Intent contract.
 
 ## Honest limitations (know these)
-- UI engine is **Chromium-only** (CDP). Firefox/WebKit need different protocols.
+- UI engine is **Chromium-only** (CDP). Chrome/Edge/Brave/Chromium are selectable,
+  but Firefox/WebKit need different protocols (a new engine behind the same interface).
 - No iframe/shadow-DOM traversal yet; no file-upload/drag-drop; single tab.
 - Auto-wait is polling-based (100ms); fine to start, optimize later with
   MutationObserver via `Runtime.addBinding`.
