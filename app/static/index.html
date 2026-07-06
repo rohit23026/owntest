@@ -322,22 +322,70 @@ function renderDetail(){
   const host = $('detail');
   const t = doc?.tests?.[selIdx];
   if(!t){ host.innerHTML = '<div class="empty">Select a test case on the left.</div>'; return; }
+  if(t.type==='ui' && migrateStepData(t)){ syncEditor(); renderTests(); }
   host.innerHTML = (t.type==='ui'?uiStepsHtml(t):apiHtml(t)) + dataHtml(t);
   wireDetail(t);
 }
 
+/* Steps never hold values. Any literal found in a step (older files, raw JSON,
+   LLM output) is moved into the data table as a column and the step is bound
+   to that column's header name. */
+function migrateStepData(t){
+  let changed = false;
+  for(const s of (t.steps||[])){
+    const dk = DATA_KEY[s.action];
+    if(!dk) continue;
+    const val = s[dk];
+    if(val===undefined || val==='' || (typeof val==='string' && BOUND_RE.test(val))) continue;
+    if(!t.data || !t.data.length) t.data = [{}];
+    const cols = dataCols(t);
+    let name = dk;
+    if(cols.includes(name) && !t.data.every(r=>r[name]===val)){   // same value -> reuse column
+      let n = 2;
+      while(cols.includes(name = dk+'_'+n)) n++;
+    }
+    t.data.forEach(r=>{ r[name] = val; });
+    s[dk] = `{{data.${name}}}`;
+    changed = true;
+  }
+  return changed;
+}
+
 /* ----- UI steps table ----- */
+const BOUND_RE = /^\{\{\s*data\.([A-Za-z0-9_.-]+)\s*\}\}$/;
+function dataCols(t){ return [...new Set((t.data||[]).flatMap(r=>Object.keys(r)))]; }
+
 function uiStepsHtml(t){
-  const rows = (t.steps||[]).map((s,i)=>`
+  const cols = dataCols(t);
+  const rows = (t.steps||[]).map((s,i)=>{
+    const dk = DATA_KEY[s.action];
+    const val = s[dk] ?? '';
+    const bound = typeof val==='string' ? (val.match(BOUND_RE)||[])[1] : null;
+    // Data comes only from the data table below — the cell is a column picker,
+    // never a free-text field. migrateStepData() guarantees steps hold no values.
+    let sel;
+    if(!dk){
+      sel = `<select disabled><option>—</option></select>`;
+    }else{
+      const placeholder = !cols.length
+        ? `<option value="" selected disabled>+ add a data column below</option>`
+        : (bound ? '' : `<option value="" selected disabled>pick a column…</option>`);
+      sel = `<select class="dsel ${bound?'var-in':''}" title="data column feeding this step">
+        ${placeholder}
+        ${cols.map(c=>`<option value="${esc(c)}" ${c===bound?'selected':''}>${esc(c)}</option>`).join('')}
+      </select>`;
+    }
+    return `
     <tr data-i="${i}">
       <td style="width:26px;color:var(--ink-dim)">${i+1}</td>
       <td style="width:130px"><select class="act">${STEP_ACTIONS.map(a=>`<option ${a===s.action?'selected':''}>${a}</option>`).join('')}</select></td>
       <td><input class="tgt ${vcls(s.selector)}" placeholder="${HAS_SEL[s.action]?'#selector':'—'}" value="${esc(s.selector||'')}" ${HAS_SEL[s.action]?'':'disabled'}></td>
-      <td><input class="dat ${vcls(s[DATA_KEY[s.action]])}" placeholder="${DATA_KEY[s.action]||'—'}" value="${esc(s[DATA_KEY[s.action]]??'')}" ${DATA_KEY[s.action]?'':'disabled'}></td>
+      <td>${sel}</td>
       <td class="del" style="width:88px;white-space:nowrap">
         <button class="mini vbtn" title="variables in this step">&#9673;</button><button class="mini up" title="move up">&#8593;</button><button class="mini dn" title="move down">&#8595;</button><button class="mini rm" title="delete step">&#10005;</button>
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
   return `<div class="subhead">Steps — <span class="n">${esc(t.id)}</span></div>
     <table class="cfg"><thead><tr><th>#</th><th>Action</th><th>Target</th><th>Data</th><th></th></tr></thead>
     <tbody id="steps-body">${rows}</tbody></table>
@@ -408,10 +456,11 @@ function wireDetail(t){
       s.action = e.target.value; syncEditor(); renderDetail();
     };
     const tgt = tr.querySelector('.tgt'); if(tgt && !tgt.disabled) tgt.oninput = e=>{ s.selector = e.target.value; tgt.classList.toggle('var-in',hasVars(e.target.value)); syncEditor(); };
-    const dat = tr.querySelector('.dat'); if(dat && !dat.disabled) dat.oninput = e=>{
-      const k = DATA_KEY[s.action];
-      s[k] = (s.action==='wait_for' && e.target.value!=='' && !isNaN(+e.target.value)) ? +e.target.value : e.target.value;
-      dat.classList.toggle('var-in',hasVars(e.target.value)); syncEditor();
+    const dsel = tr.querySelector('.dsel');
+    if(dsel && !dsel.disabled) dsel.onchange = e=>{
+      if(!e.target.value) return;             // "(fixed)" / placeholder rows are inert
+      s[DATA_KEY[s.action]] = `{{data.${e.target.value}}}`;
+      syncEditor(); renderDetail();
     };
     tr.querySelector('.rm').onclick = ()=>{ t.steps.splice(i,1); syncEditor(); renderDetail(); renderTests(); };
     tr.querySelector('.up').onclick = ()=>{ if(i>0){ [t.steps[i-1],t.steps[i]]=[t.steps[i],t.steps[i-1]]; syncEditor(); renderDetail(); } };
