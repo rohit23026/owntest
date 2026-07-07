@@ -17,9 +17,10 @@ a = Analysis(
         ('../owntest', 'owntest'),            # the engine as source (imported at runtime)
     ],
     hiddenimports=[
-        'owntest', 'owntest.runner',
+        'owntest', 'owntest.runner', 'owntest.config_store',
         'owntest.cdp.client', 'owntest.cdp.browser',
         'owntest.ui.page', 'owntest.api.engine', 'owntest.llm.provider',
+        'sqlite3',          # config_store backend — needs the _sqlite3 DLL bundled
         'websockets', 'websockets.legacy',
         'webview.platforms.winforms', 'webview.platforms.edgechromium',
         'clr_loader', 'pythonnet',
